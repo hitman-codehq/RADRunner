@@ -43,6 +43,13 @@ void SendFile(RSocket &a_socket)
 	long bytesWritten, size, totalSize;
 	FILE *file;
 
+	if ((file = fopen("test", "rb")) == nullptr)
+	{
+		printf("Unable to open file\n");
+
+		return;
+	}
+
 	if (a_socket.Write(g_commands[ESendFile].m_command, g_commands[ESendFile].m_length) > 0)
 	{
 		if ((length = a_socket.Read(buffer, sizeof(buffer))) > 0) // TODO: CAW - Size
@@ -52,35 +59,25 @@ void SendFile(RSocket &a_socket)
 
 			if (strcmp(buffer, "ok") == 0)
 			{
-				// TODO: CAW - If this is not found, it causes the server to go into a loop
-				file = fopen("test", "rb");
+				// TODO: CAW - Use StdFuncs function for this?
+				fseek(file, 0, SEEK_END);
+				totalSize = ftell(file);
+				fseek(file, 0, SEEK_SET);
 
-				if (file != nullptr)
+				printf("File size is %ld\n", totalSize);
+				bytesWritten = 0;
+
+				while ((size = fread(buffer, 1, sizeof(buffer), file)) > 0)
 				{
-					// TODO: CAW - Use StdFuncs function for this?
-					fseek(file, 0, SEEK_END);
-					totalSize = ftell(file);
-					fseek(file, 0, SEEK_SET);
-
-					printf("File size is %ld\n", totalSize);
-					bytesWritten = 0;
-
-					while ((size = fread(buffer, 1, sizeof(buffer), file)) > 0)
-					{
-						a_socket.Write(buffer, size);
-						printf("Wrote %ld bytes\n", size);
-						bytesWritten += size;
-					}
-
-					printf("Wrote %ld bytes\n", bytesWritten);
-
-					fclose(file);
+					a_socket.Write(buffer, size);
+					printf("Wrote %ld bytes\n", size);
+					bytesWritten += size;
 				}
-				else
-				{
-					printf("Unable to open file\n");
-				}
+
+				printf("Wrote %ld bytes\n", bytesWritten);
 			}
 		}
 	}
+
+	fclose(file);
 }
