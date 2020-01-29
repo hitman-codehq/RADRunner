@@ -16,7 +16,7 @@
 
 /* Lovely version structure.  Only Amiga makes it possible! */
 
-static const struct Resident g_oROMTag __attribute__((used)) =
+static const struct Resident g_ROMTag __attribute__((used)) =
 {
 	RTC_MATCHWORD,
 	(struct Resident *) &g_oROMTag,
@@ -32,11 +32,11 @@ static const struct Resident g_oROMTag __attribute__((used)) =
 
 /* Use a large stack, as copying is highly recursive and can use a lot of stack space */
 
-static const char __attribute__((used)) g_accStackCookie[] = "$STACK:262144";
+static const char __attribute__((used)) g_stackCookie[] = "$STACK:262144";
 
 #endif /* __amigaos4__ */
 
-struct Command
+struct SCommand
 {
 	const char	*m_command;
 	int			m_length;
@@ -45,25 +45,22 @@ struct Command
 /* Template for use in obtaining command line parameters.  Remember to change the indexes */
 /* in Scanner.h if the ordering or number of these change */
 
-static const char g_accTemplate[] = "SERVER/S";
+static const char g_template[] = "SERVER/S";
 
-volatile bool g_bBreak;		/* Set to true if when ctrl-c is hit by the user */
-RArgs g_oArgs;				/* Contains the parsed command line arguments */
+static volatile bool g_break;		/* Set to true if when ctrl-c is hit by the user */
+static RArgs g_args;				/* Contains the parsed command line arguments */
 
-static const struct Command g_commands[] =
+static const struct SCommand g_commands[] =
 {
 	{ "sendfile", 8 },
 	{ "quit", 4 }
 };
 
-// TODO: CAW - Naming?
 enum TCommands
 {
 	ESendFile,
 	EQuit
 };
-
-#define NUM_COMMANDS (sizeof(g_commands) / sizeof(struct Command))
 
 /* Written: Friday 02-Jan-2009 10:30 am */
 
@@ -71,10 +68,10 @@ static void SignalHandler(int /*a_iSignal*/)
 {
 	/* Signal that ctrl-c has been pressed so that we break out of the scanning routine */
 
-	g_bBreak = true;
+	g_break = true;
 }
 
-RSocket g_socket; // TODO: CAW - Make this a member
+static RSocket g_socket;
 
 /**
  * Short description.
@@ -239,10 +236,10 @@ void StartServer()
 					}
 				}
 			}
-			while (!g_bBreak && !quit);
+			while (!g_break && !quit);
 		}
 
-		if (g_bBreak)
+		if (g_break)
 		{
 			printf("Received ctrl-c, shutting down\n");
 		}
@@ -274,10 +271,9 @@ int main(int a_iArgC, const char *a_ppcArgV[])
 
 	/* Parse the command line parameters passed in and make sure they are formatted correctly */
 
-	if ((Result = g_oArgs.Open(g_accTemplate, ARGS_NUM_ARGS, a_ppcArgV, a_iArgC)) == KErrNone)
+	if ((Result = g_args.Open(g_template, ARGS_NUM_ARGS, a_ppcArgV, a_iArgC)) == KErrNone)
 	{
-		//if (g_oArgs[ARGS_SERVER] != nullptr)
-		if (g_oArgs[0] != nullptr)
+		if (g_args[ARGS_SERVER] != nullptr)
 		{
 			StartServer();
 		}
@@ -298,7 +294,7 @@ int main(int a_iArgC, const char *a_ppcArgV[])
 			}
 		}
 
-		g_oArgs.Close();
+		g_args.Close();
 	}
 	else
 	{
