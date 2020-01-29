@@ -1,6 +1,5 @@
 
 #include <StdFuncs.h>
-// TODO: CAW - Move to StdFuncs.h?
 #include "DirWrapper.h"
 
 /**

@@ -74,7 +74,7 @@ void StartServer()
 {
 	bool disconnect, shutdown;
 	char buffer[1024]; // TODO: CAW
-	int length, selectResult;
+	int length, result, selectResult;
 	fd_set socketSet;
 	std::string message;
 
@@ -82,12 +82,12 @@ void StartServer()
 
 	do
 	{
-		if (g_socket.Open(NULL) == KErrNone)
+		if ((result = g_socket.Open(NULL)) == KErrNone)
 		{
 			printf("Listening for a client connection... ");
 			fflush(stdout);
 
-			if (g_socket.Listen(80) == KErrNone)
+			if ((result = g_socket.Listen(80)) == KErrNone)
 			{
 				printf("connected\n");
 
@@ -122,8 +122,9 @@ void StartServer()
 							}
 							else
 							{
-								message = "invalid"; // TODO: CAW - Write these strings directly
 								printf("Invalid command received: %s\n", buffer);
+
+								message = "invalid"; // TODO: CAW - Write these strings directly
 								g_socket.Write(message.c_str(), message.length());
 							}
 						}
@@ -143,11 +144,20 @@ void StartServer()
 			}
 			else
 			{
-				printf("connection failed!\n");
+				printf("failed (Error = %d)!\n", result);
+
+				shutdown = true;
 			}
 
 			g_socket.Close();
-		} // TODO: CAW - else fail
+		}
+		else
+		{
+			Utils::Error("Unable to open socket (Error = %d)", result);
+
+			shutdown = true;
+		}
+
 	}
 	while (!g_break && !shutdown);
 
@@ -170,8 +180,7 @@ void StartServer()
 
 int main(int a_argc, const char *a_argv[])
 {
-	char *Source, *Dest;
-	int Length, Result; // TODO: CAW - Rename these
+	int length, result;
 
 	/* Install a ctrl-c handler so we can handle ctrl-c being pressed and shut down the scan */
 	/* properly */
@@ -180,7 +189,7 @@ int main(int a_argc, const char *a_argv[])
 
 	/* Parse the command line parameters passed in and make sure they are formatted correctly */
 
-	if ((Result = g_args.Open(g_template, ARGS_NUM_ARGS, a_argv, a_argc)) == KErrNone)
+	if ((result = g_args.Open(g_template, ARGS_NUM_ARGS, a_argv, a_argc)) == KErrNone)
 	{
 		if (g_args[ARGS_SERVER] != nullptr)
 		{
@@ -209,7 +218,7 @@ int main(int a_argc, const char *a_argv[])
 			}
 			else
 			{
-				printf("Error: Cannot connect to localhost\n"); // TODO: CAW
+				Utils::Error("Cannot connect to localhost"); // TODO: CAW
 			}
 		}
 
@@ -217,7 +226,7 @@ int main(int a_argc, const char *a_argv[])
 	}
 	else
 	{
-		if (Result == KErrNotFound)
+		if (result == KErrNotFound)
 		{
 			Utils::Error("Required argument missing");
 		}
@@ -227,5 +236,5 @@ int main(int a_argc, const char *a_argv[])
 		}
 	}
 
-	return((Result == KErrNone) ? RETURN_OK : RETURN_ERROR);
+	return((result == KErrNone) ? RETURN_OK : RETURN_ERROR);
 }

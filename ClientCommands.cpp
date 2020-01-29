@@ -46,7 +46,7 @@ void Send(RSocket &a_socket, const char *a_fileName)
 
 	if ((file = fopen(a_fileName, "rb")) == nullptr)
 	{
-		printf("Unable to open file \"%s\"\n", a_fileName);
+		Utils::Error("Unable to open file \"%s\"", a_fileName);
 
 		return;
 	}

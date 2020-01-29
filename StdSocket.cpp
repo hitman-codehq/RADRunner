@@ -151,17 +151,18 @@ int RSocket::Listen(short a_sPort)
 
 	if (bind(m_iSocket, (struct sockaddr *) &Server, sizeof(Server)) != SOCKET_ERROR)
 	{
-		listen(m_iSocket, 3); // TODO: CAW - Return code & 3?
-
-		ClientSize = sizeof(Client);
-		Socket = accept(m_iSocket, (struct sockaddr *) &Client, &ClientSize);
-
-		if (Socket != INVALID_SOCKET)
+		if (listen(m_iSocket, 1) == 0)
 		{
-			RetVal = KErrNone;
+			ClientSize = sizeof(Client);
+			Socket = accept(m_iSocket, (struct sockaddr *) &Client, &ClientSize);
 
-			m_iServerSocket = m_iSocket;
-			m_iSocket = Socket;
+			if (Socket != INVALID_SOCKET)
+			{
+				RetVal = KErrNone;
+
+				m_iServerSocket = m_iSocket;
+				m_iSocket = Socket;
+			}
 		}
 	}
 
