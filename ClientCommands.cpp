@@ -36,16 +36,16 @@ void Quit(RSocket &a_socket)
  * @return	Return value
  */
 
-void SendFile(RSocket &a_socket)
+void SendFile(RSocket &a_socket, const char *a_fileName)
 {
 	char buffer[1024]; // TODO: CAW
 	int length, result;
 	long bytesWritten, size, totalSize;
 	FILE *file;
 
-	if ((file = fopen("test", "rb")) == nullptr)
+	if ((file = fopen(a_fileName, "rb")) == nullptr)
 	{
-		printf("Unable to open file\n");
+		printf("Unable to open file \"%s\"\n", a_fileName);
 
 		return;
 	}

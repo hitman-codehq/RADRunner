@@ -10,7 +10,8 @@
 #include "DirWrapper.h"
 
 #define ARGS_SERVER 0
-#define ARGS_NUM_ARGS 1
+#define ARGS_SENDFILE 1
+#define ARGS_NUM_ARGS 2
 
 #ifdef __amigaos4__
 
@@ -39,7 +40,7 @@ static const char __attribute__((used)) g_stackCookie[] = "$STACK:262144";
 /* Template for use in obtaining command line parameters.  Remember to change the indexes */
 /* in Scanner.h if the ordering or number of these change */
 
-static const char g_template[] = "SERVER/S";
+static const char g_template[] = "SERVER/S,SENDFILE/M";
 
 static volatile bool g_break;		/* Set to true if when ctrl-c is hit by the user */
 static RArgs g_args;				/* Contains the parsed command line arguments */
@@ -149,13 +150,13 @@ int main(int a_argc, const char *a_argv[])
 		{
 			StartServer();
 		}
-		else
+		else if (g_args[ARGS_SENDFILE] != nullptr)
 		{
 			if (g_socket.Open("localhost") == KErrNone)
 			{
 				printf("Connected ok!\n");
 
-				SendFile(g_socket);
+				SendFile(g_socket, (const char *) g_args[ARGS_SENDFILE]);
 				Quit(g_socket);
 
 				g_socket.Close();
