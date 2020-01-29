@@ -5,8 +5,8 @@
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/stat.h> // TODO: CAW - UNIX only
-#include <unistd.h> // TODO: CAW - UNIX only
+#include "ClientCommands.h"
+#include "ServerCommands.h"
 #include "DirWrapper.h"
 
 #define ARGS_SERVER 0
@@ -36,12 +36,6 @@ static const char __attribute__((used)) g_stackCookie[] = "$STACK:262144";
 
 #endif /* __amigaos4__ */
 
-struct SCommand
-{
-	const char	*m_command;
-	int			m_length;
-};
-
 /* Template for use in obtaining command line parameters.  Remember to change the indexes */
 /* in Scanner.h if the ordering or number of these change */
 
@@ -50,21 +44,9 @@ static const char g_template[] = "SERVER/S";
 static volatile bool g_break;		/* Set to true if when ctrl-c is hit by the user */
 static RArgs g_args;				/* Contains the parsed command line arguments */
 
-static const struct SCommand g_commands[] =
-{
-	{ "sendfile", 8 },
-	{ "quit", 4 }
-};
-
-enum TCommands
-{
-	ESendFile,
-	EQuit
-};
-
 /* Written: Friday 02-Jan-2009 10:30 am */
 
-static void SignalHandler(int /*a_iSignal*/)
+static void SignalHandler(int /*a_signal*/)
 {
 	/* Signal that ctrl-c has been pressed so that we break out of the scanning routine */
 
@@ -72,82 +54,6 @@ static void SignalHandler(int /*a_iSignal*/)
 }
 
 static RSocket g_socket;
-
-/**
- * Short description.
- * Long multi line description.
- *
- * @pre		Some precondition here
- *
- * @date	Sunday 17-Nov-2019 3:43 pm, Sankt Oberholz
- * @param	Parameter		Description
- * @return	Return value
- */
-
-void Quit()
-{
-	g_socket.Write(g_commands[EQuit].m_command, g_commands[EQuit].m_length);
-}
-
-/**
- * Short description.
- * Long multi line description.
- *
- * @pre		Some precondition here
- *
- * @date	Sunday 17-Nov-2019 3:30 pm, Sankt Oberholz
- * @param	Parameter		Description
- * @return	Return value
- */
-
-void SendFile()
-{
-	char buffer[1024]; // TODO: CAW
-	int length, result;
-	long bytesWritten, size, totalSize;
-	FILE *file;
-
-	if (g_socket.Write(g_commands[ESendFile].m_command, g_commands[ESendFile].m_length) > 0)
-	{
-		if ((length = g_socket.Read(buffer, sizeof(buffer))) > 0) // TODO: CAW - Size
-		{
-			buffer[length] = '\0';
-			printf("*** Received %s\n", buffer);
-
-			if (strcmp(buffer, "ok") == 0)
-			{
-				// TODO: CAW - If this is not found, it causes the server to go into a loop
-				file = fopen("test", "rb");
-
-				if (file != nullptr)
-				{
-					// TODO: CAW - Use StdFuncs function for this?
-					fseek(file, 0, SEEK_END);
-					totalSize = ftell(file);
-					fseek(file, 0, SEEK_SET);
-
-					printf("File size is %ld\n", totalSize);
-					bytesWritten = 0;
-
-					while ((size = fread(buffer, 1, sizeof(buffer), file)) > 0)
-					{
-						g_socket.Write(buffer, size);
-						printf("Wrote %ld bytes\n", size);
-						bytesWritten += size;
-					}
-
-					printf("Wrote %ld bytes\n", bytesWritten);
-
-					fclose(file);
-				}
-				else
-				{
-					printf("Unable to open file\n");
-				}
-			}
-		}
-	}
-}
 
 /**
  * Short description.
@@ -163,11 +69,9 @@ void SendFile()
 void StartServer()
 {
 	bool quit;
-	char buffer[1024];
-	//char message[1024];
+	char buffer[1024]; // TODO: CAW
 	int length;
 	std::string message;
-	FILE *file;
 
 	printf("Starting server...\n");
 
@@ -190,39 +94,7 @@ void StartServer()
 
 					if (strcmp(buffer, g_commands[ESendFile].m_command) == 0)
 					{
-						message = "ok";
-						g_socket.Write(message.c_str(), message.length());
-
-						file = fopen("outfile", "wb");
-
-						if (file != nullptr)
-						{
-							int bytesRead = 0, bytesToRead, size, totalSize = 8432; // TODO: CAW - This should be sent by the client
-
-							do
-							{
-								bytesToRead = ((totalSize - bytesRead) >= sizeof(buffer)) ? sizeof(buffer) : (totalSize - bytesRead); // TODO: CAW
-								printf("Reading %d bytes\n", bytesToRead);
-								size = g_socket.Read(buffer, bytesToRead); // TODO: CAW - Error checking all through here
-
-								if (size > 0)
-								{
-									fwrite(buffer, 1, size, file);
-									printf("Read %d bytes\n", size);
-									bytesRead += size;
-								}
-
-								printf("bytesRead = %d\n", bytesRead);
-							}
-							while (bytesRead < totalSize); // TODO: CAW - Handle failure
-
-							fclose(file);
-
-							// TODO: CAW - Error checking
-							Utils::SetProtection("outfile", (S_IXUSR | S_IXGRP | S_IXOTH | S_IRUSR | S_IRGRP | S_IROTH | S_IWUSR));
-
-							execl("outfile", "");
-						}
+						ReceiveFile(g_socket);
 					}
 					else if (strcmp(buffer, g_commands[EQuit].m_command) == 0)
 					{
@@ -259,7 +131,7 @@ void StartServer()
  * @return	Return value
  */
 
-int main(int a_iArgC, const char *a_ppcArgV[])
+int main(int a_argc, const char *a_argv[])
 {
 	char *Source, *Dest;
 	int Length, Result;
@@ -271,7 +143,7 @@ int main(int a_iArgC, const char *a_ppcArgV[])
 
 	/* Parse the command line parameters passed in and make sure they are formatted correctly */
 
-	if ((Result = g_args.Open(g_template, ARGS_NUM_ARGS, a_ppcArgV, a_iArgC)) == KErrNone)
+	if ((Result = g_args.Open(g_template, ARGS_NUM_ARGS, a_argv, a_argc)) == KErrNone)
 	{
 		if (g_args[ARGS_SERVER] != nullptr)
 		{
@@ -283,8 +155,8 @@ int main(int a_iArgC, const char *a_ppcArgV[])
 			{
 				printf("Connected ok!\n");
 
-				SendFile();
-				Quit();
+				SendFile(g_socket);
+				Quit(g_socket);
 
 				g_socket.Close();
 			}
