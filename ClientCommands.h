@@ -6,8 +6,9 @@ class RSocket;
 
 enum TCommands
 {
-	ESendFile,
-	EQuit
+	EExecute,
+	ESend,
+	EShutdown
 };
 
 struct SCommand
@@ -18,8 +19,10 @@ struct SCommand
 
 extern const struct SCommand g_commands[];
 
-void Quit(RSocket &a_socket);
+void Execute(RSocket &a_socket, const char *a_fileName);
 
-void SendFile(RSocket &a_socket, const char *a_fileName);
+void Send(RSocket &a_socket, const char *a_fileName);
+
+void Shutdown(RSocket &a_socket);
 
 #endif /* ! CLIENTCOMMANDS_H */

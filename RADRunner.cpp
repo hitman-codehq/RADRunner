@@ -1,17 +1,20 @@
 
 #include <StdFuncs.h>
 #include <Args.h>
-#include <StdSocket.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/select.h>
 #include "ClientCommands.h"
-#include "ServerCommands.h"
 #include "DirWrapper.h"
+#include "ServerCommands.h"
+#include "StdSocket.h"
 
-#define ARGS_SERVER 0
-#define ARGS_SENDFILE 1
-#define ARGS_NUM_ARGS 2
+#define ARGS_EXECUTE 0
+#define ARGS_SEND 1
+#define ARGS_SERVER 2
+#define ARGS_SHUTDOWN 3
+#define ARGS_NUM_ARGS 4
 
 #ifdef __amigaos4__
 
@@ -40,7 +43,7 @@ static const char __attribute__((used)) g_stackCookie[] = "$STACK:262144";
 /* Template for use in obtaining command line parameters.  Remember to change the indexes */
 /* in Scanner.h if the ordering or number of these change */
 
-static const char g_template[] = "SERVER/S,SENDFILE/M";
+static const char g_template[] = "EXECUTE/S,SEND/M,SERVER/S,SHUTDOWN/S";
 
 static volatile bool g_break;		/* Set to true if when ctrl-c is hit by the user */
 static RArgs g_args;				/* Contains the parsed command line arguments */
@@ -69,55 +72,88 @@ static RSocket g_socket;
 
 void StartServer()
 {
-	bool quit;
+	bool disconnect, shutdown;
 	char buffer[1024]; // TODO: CAW
-	int length;
+	int length, selectResult;
+	fd_set socketSet;
 	std::string message;
 
-	printf("Starting server...\n");
+	printf("Starting RADRunner server\n");
 
-	if (g_socket.Open(NULL) == KErrNone)
+	do
 	{
-		printf("Connected ok!\n");
-
-		if (g_socket.Listen(80) == KErrNone)
+		if (g_socket.Open(NULL) == KErrNone)
 		{
-			printf("Listened ok!\n");
+			printf("Listening for a client connection... ");
+			fflush(stdout);
 
-			quit = false;
-
-			do
+			if (g_socket.Listen(80) == KErrNone)
 			{
-				if ((length = g_socket.Read(buffer, sizeof(buffer))) > 0)
-				{
-					buffer[length] = '\0';
-					printf("Received request (Length = %d), %s\n", length, buffer);
+				printf("connected\n");
 
-					if (strcmp(buffer, g_commands[ESendFile].m_command) == 0)
+				disconnect = shutdown = false;
+
+				FD_ZERO(&socketSet);
+				FD_SET(g_socket.m_iSocket, &socketSet);
+
+				do
+				{
+					selectResult = select(FD_SETSIZE, &socketSet, NULL, NULL, NULL);
+
+					if (selectResult > 0)
 					{
-						ReceiveFile(g_socket);
+						if ((length = g_socket.Read(buffer, sizeof(buffer))) > 0)
+						{
+							buffer[length] = '\0';
+							printf("Received request \"%s\"\n", buffer);
+
+							if (strcmp(buffer, g_commands[EExecute].m_command) == 0)
+							{
+								ExecuteServer();
+							}
+							else if (strcmp(buffer, g_commands[ESend].m_command) == 0)
+							{
+								ReceiveFile(g_socket);
+							}
+							else if (strcmp(buffer, g_commands[EShutdown].m_command) == 0)
+							{
+								shutdown = true;
+								printf("shutdown: Exiting\n");
+							}
+							else
+							{
+								message = "invalid"; // TODO: CAW - Write these strings directly
+								printf("Invalid command received: %s\n", buffer);
+								g_socket.Write(message.c_str(), message.length());
+							}
+						}
+						else
+						{
+							disconnect = true;
+
+							printf("Client disconnected, ending session\n");
+						}
 					}
-					else if (strcmp(buffer, g_commands[EQuit].m_command) == 0)
+					else if (selectResult == -1)
 					{
-						quit = true;
-						printf("Quit received, shutting down...\n");
-					}
-					else
-					{
-						message = "invalid"; // TODO: CAW - Write these strings directly
-						g_socket.Write(message.c_str(), message.length());
+						disconnect = true;
 					}
 				}
+				while (!g_break && !disconnect && !shutdown);
 			}
-			while (!g_break && !quit);
-		}
+			else
+			{
+				printf("connection failed!\n");
+			}
 
-		if (g_break)
-		{
-			printf("Received ctrl-c, shutting down\n");
-		}
+			g_socket.Close();
+		} // TODO: CAW - else fail
+	}
+	while (!g_break && !shutdown);
 
-		g_socket.Close();
+	if (g_break)
+	{
+		printf("Received ctrl-c, exiting\n");
 	}
 }
 
@@ -135,7 +171,7 @@ void StartServer()
 int main(int a_argc, const char *a_argv[])
 {
 	char *Source, *Dest;
-	int Length, Result;
+	int Length, Result; // TODO: CAW - Rename these
 
 	/* Install a ctrl-c handler so we can handle ctrl-c being pressed and shut down the scan */
 	/* properly */
@@ -150,14 +186,24 @@ int main(int a_argc, const char *a_argv[])
 		{
 			StartServer();
 		}
-		else if (g_args[ARGS_SENDFILE] != nullptr)
+		else
 		{
 			if (g_socket.Open("localhost") == KErrNone)
 			{
-				printf("Connected ok!\n");
+				if (g_args[ARGS_EXECUTE] != nullptr)
+				{
+					Execute(g_socket, g_args[ARGS_EXECUTE]);
+				}
 
-				SendFile(g_socket, (const char *) g_args[ARGS_SENDFILE]);
-				Quit(g_socket);
+				if (g_args[ARGS_SEND] != nullptr)
+				{
+					Send(g_socket, g_args[ARGS_SEND]);
+				}
+
+				if (g_args[ARGS_SHUTDOWN] != nullptr)
+				{
+					Shutdown(g_socket);
+				}
 
 				g_socket.Close();
 			}

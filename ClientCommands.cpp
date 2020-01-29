@@ -1,12 +1,13 @@
 
 #include <StdFuncs.h>
-#include <StdSocket.h>
 #include "ClientCommands.h"
+#include "StdSocket.h"
 
 const struct SCommand g_commands[] =
 {
-	{ "sendfile", 8 },
-	{ "quit", 4 }
+	{ "execute", 11 },
+	{ "send", 8 },
+	{ "shutdown", 8 }
 };
 
 /**
@@ -15,14 +16,14 @@ const struct SCommand g_commands[] =
  *
  * @pre		Some precondition here
  *
- * @date	Sunday 17-Nov-2019 3:43 pm, Sankt Oberholz
+ * @date	Wednesday 29-Jan-2020 2:13 pm, Scoot flight TR 735 to Singapore
  * @param	Parameter		Description
  * @return	Return value
  */
 
-void Quit(RSocket &a_socket)
+void Execute(RSocket &a_socket, const char *a_fileName)
 {
-	a_socket.Write(g_commands[EQuit].m_command, g_commands[EQuit].m_length);
+	a_socket.Write(g_commands[EExecute].m_command, g_commands[EExecute].m_length);
 }
 
 /**
@@ -36,11 +37,11 @@ void Quit(RSocket &a_socket)
  * @return	Return value
  */
 
-void SendFile(RSocket &a_socket, const char *a_fileName)
+void Send(RSocket &a_socket, const char *a_fileName)
 {
 	char buffer[1024]; // TODO: CAW
 	int length, result;
-	long bytesWritten, size, totalSize;
+	long size, totalSize;
 	FILE *file;
 
 	if ((file = fopen(a_fileName, "rb")) == nullptr)
@@ -50,12 +51,11 @@ void SendFile(RSocket &a_socket, const char *a_fileName)
 		return;
 	}
 
-	if (a_socket.Write(g_commands[ESendFile].m_command, g_commands[ESendFile].m_length) > 0)
+	if (a_socket.Write(g_commands[ESend].m_command, g_commands[ESend].m_length) > 0)
 	{
 		if ((length = a_socket.Read(buffer, sizeof(buffer))) > 0) // TODO: CAW - Size
 		{
 			buffer[length] = '\0';
-			printf("*** Received %s\n", buffer);
 
 			if (strcmp(buffer, "ok") == 0)
 			{
@@ -64,20 +64,29 @@ void SendFile(RSocket &a_socket, const char *a_fileName)
 				totalSize = ftell(file);
 				fseek(file, 0, SEEK_SET);
 
-				printf("File size is %ld\n", totalSize);
-				bytesWritten = 0;
-
 				while ((size = fread(buffer, 1, sizeof(buffer), file)) > 0)
 				{
 					a_socket.Write(buffer, size);
-					printf("Wrote %ld bytes\n", size);
-					bytesWritten += size;
 				}
-
-				printf("Wrote %ld bytes\n", bytesWritten);
 			}
 		}
 	}
 
 	fclose(file);
+}
+
+/**
+ * Short description.
+ * Long multi line description.
+ *
+ * @pre		Some precondition here
+ *
+ * @date	Wednesday 29-Jan-2020 2:52 pm, Scoot flight TR 735 to Singapore
+ * @param	Parameter		Description
+ * @return	Return value
+ */
+
+void Shutdown(RSocket &a_socket)
+{
+	a_socket.Write(g_commands[EShutdown].m_command, g_commands[EShutdown].m_length);
 }

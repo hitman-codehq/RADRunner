@@ -7,14 +7,13 @@ class RSocket
 private:
 
 	int		m_iServerSocket;
+
+public:
 	int		m_iSocket;
 
 public:
 
-	RSocket()
-	{
-		m_iServerSocket = m_iSocket;
-	}
+	RSocket();
 
 	~RSocket()
 	{

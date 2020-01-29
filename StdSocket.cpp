@@ -19,8 +19,23 @@
 
 #define closesocket(socket) close(socket)
 #define INVALID_SOCKET -1
-// TODO: CAW - correct?
 #define SOCKET_ERROR -1
+
+/**
+ * Short description.
+ * Long multi line description.
+ *
+ * @pre		Some precondition here
+ *
+ * @date	Wednesday 29-Jan-2020 4:47 pm, Scoot flight TR 735 to Singapore
+ * @param	Parameter		Description
+ * @return	Return value
+ */
+
+RSocket::RSocket()
+{
+	m_iServerSocket = m_iSocket = INVALID_SOCKET;
+}
 
 /**
  * Short description.
@@ -48,8 +63,6 @@ int RSocket::Open(const char *a_pccAddress)
 
 	RetVal = KErrGeneral;
 
-	m_iSocket = INVALID_SOCKET;
-
 	//if (WSAStartup(MAKEWORD(2, 2), &WSAData) == 0)
 	{
 		if ((m_iSocket = socket(AF_INET, SOCK_STREAM, 0)) != INVALID_SOCKET)
@@ -59,7 +72,6 @@ int RSocket::Open(const char *a_pccAddress)
 				if ((HostEnt = gethostbyname(a_pccAddress)) != NULL)
 				{
 					InAddr = (struct in_addr *) HostEnt->h_addr_list[0];
-					// printf("%s resolved to %s\n", a_pccAddress, inet_ntoa(*InAddr));
 
 					SockAddr.sin_family = HostEnt->h_addrtype;
 					SockAddr.sin_port = htons(80);
@@ -139,19 +151,14 @@ int RSocket::Listen(short a_sPort)
 
 	if (bind(m_iSocket, (struct sockaddr *) &Server, sizeof(Server)) != SOCKET_ERROR)
 	{
-		printf("Listening...\n");
 		listen(m_iSocket, 3); // TODO: CAW - Return code & 3?
 
 		ClientSize = sizeof(Client);
-		printf("Accepting... ");
 		Socket = accept(m_iSocket, (struct sockaddr *) &Client, &ClientSize);
-		printf("done\n");
 
 		if (Socket != INVALID_SOCKET)
 		{
 			RetVal = KErrNone;
-
-			// printf("Client connected from IP address %s, port %d\n", inet_ntoa(Client.sin_addr), ntohs(Client.sin_port));
 
 			m_iServerSocket = m_iSocket;
 			m_iSocket = Socket;
@@ -174,14 +181,7 @@ int RSocket::Listen(short a_sPort)
 
 int RSocket::Read(char *a_pcBuffer, int a_iSize)
 {
-	int RetVal;
-
-	if ((RetVal = recv(m_iSocket, a_pcBuffer, a_iSize, 0)) > 0)
-	{
-		printf("recv() returned %d\n", RetVal);
-	}
-
-	return(RetVal);
+	return(recv(m_iSocket, a_pcBuffer, a_iSize, 0));
 }
 
 /**
@@ -197,12 +197,5 @@ int RSocket::Read(char *a_pcBuffer, int a_iSize)
 
 int RSocket::Write(const char *a_pccBuffer, int a_iSize)
 {
-	int RetVal;
-
-	if ((RetVal = send(m_iSocket, a_pccBuffer, a_iSize, 0)) > 0)
-	{
-		printf("send returned %d\n", RetVal);
-	}
-
-	return(RetVal);
+	return(send(m_iSocket, a_pccBuffer, a_iSize, 0));
 }

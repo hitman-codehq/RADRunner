@@ -4,6 +4,8 @@
 
 class RSocket;
 
+void ExecuteServer();
+
 void ReceiveFile(RSocket &a_socket);
 
 #endif /* ! SERVERCOMMANDS_H */
