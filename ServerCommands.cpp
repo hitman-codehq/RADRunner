@@ -50,38 +50,37 @@ void ReceiveFile(RSocket &a_socket)
 	std::string message;
 	FILE *file;
 
-    message = "ok";
-    a_socket.Write(message.c_str(), message.length());
+	message = "ok";
+	a_socket.Write(message.c_str(), message.length());
 
-    file = fopen(outfileName, "wb");
+	file = fopen(outfileName, "wb");
 
-    if (file != nullptr)
-    {
-        int bytesRead = 0, bytesToRead, size, totalSize = 8144; // TODO: CAW - This should be sent by the client
+	if (file != nullptr)
+	{
+		int bytesRead = 0, bytesToRead, size, totalSize = 8144; // TODO: CAW - This should be sent by the client
 
-        do
-        {
-            bytesToRead = ((totalSize - bytesRead) >= sizeof(buffer)) ? sizeof(buffer) : (totalSize - bytesRead); // TODO: CAW
-            size = a_socket.Read(buffer, bytesToRead); // TODO: CAW - Error checking all through here
+		do
+		{
+			bytesToRead = ((totalSize - bytesRead) >= sizeof(buffer)) ? sizeof(buffer) : (totalSize - bytesRead); // TODO: CAW
+			size = a_socket.Read(buffer, bytesToRead); // TODO: CAW - Error checking all through here
 
-            if (size > 0)
-            {
-                fwrite(buffer, 1, size, file);
-                bytesRead += size;
-            }
-        }
-        while (bytesRead < totalSize); // TODO: CAW - Handle failure
+			if (size > 0)
+			{
+				fwrite(buffer, 1, size, file);
+				bytesRead += size;
+			}
+		}
+		while (bytesRead < totalSize); // TODO: CAW - Handle failure
 
-        printf("send: Wrote %d bytes to file \"%s\"\n", bytesRead, outfileName);
+		printf("send: Wrote %d bytes to file \"%s\"\n", bytesRead, outfileName);
 
-        fclose(file);
+		fclose(file);
 
-#ifdef __unix__
+		#ifdef __unix__
 
-        // TODO: CAW - Error checking + these need to be abstracted and passed as a part of the message
-        Utils::SetProtection(outfileName, (S_IXUSR | S_IXGRP | S_IXOTH | S_IRUSR | S_IRGRP | S_IROTH | S_IWUSR));
+		// TODO: CAW - Error checking + these need to be abstracted and passed as a part of the message
+		Utils::SetProtection(outfileName, (S_IXUSR | S_IXGRP | S_IXOTH | S_IRUSR | S_IRGRP | S_IROTH | S_IWUSR));
 
-#endif /* __unix__ */
-
-    }
+		#endif /* __unix__ */
+	}
 }
