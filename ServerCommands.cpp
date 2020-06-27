@@ -5,6 +5,16 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#ifdef __unix__
+
+static const char outfileName[] = "./outfile";
+
+#else /* ! __unix__ */
+
+static const char outfileName[] = "outfile.exe";
+
+#endif /* ! __unix__ */
+
 /**
  * Short description.
  * Long multi line description.
@@ -19,9 +29,8 @@
 // TODO: CAW - This name is as bad as the American girl's English (like, like) in the seat behind me
 void ExecuteServer()
 {
-	printf("execute: Executing command \"./outfile\"\n");
-
-	system("./outfile");
+	printf("execute: Executing command \"%s\"\n", outfileName);
+	system(outfileName);
 }
 
 /**
@@ -44,11 +53,11 @@ void ReceiveFile(RSocket &a_socket)
     message = "ok";
     a_socket.Write(message.c_str(), message.length());
 
-    file = fopen("outfile", "wb");
+    file = fopen(outfileName, "wb");
 
     if (file != nullptr)
     {
-        int bytesRead = 0, bytesToRead, size, totalSize = 8432; // TODO: CAW - This should be sent by the client
+        int bytesRead = 0, bytesToRead, size, totalSize = 8144; // TODO: CAW - This should be sent by the client
 
         do
         {
@@ -63,11 +72,16 @@ void ReceiveFile(RSocket &a_socket)
         }
         while (bytesRead < totalSize); // TODO: CAW - Handle failure
 
-        printf("send: Wrote %d bytes to file \"%s\"\n", bytesRead, "outfile");
+        printf("send: Wrote %d bytes to file \"%s\"\n", bytesRead, outfileName);
 
         fclose(file);
 
+#ifdef __unix__
+
         // TODO: CAW - Error checking + these need to be abstracted and passed as a part of the message
-        Utils::SetProtection("outfile", (S_IXUSR | S_IXGRP | S_IXOTH | S_IRUSR | S_IRGRP | S_IROTH | S_IWUSR));
+        Utils::SetProtection(outfileName, (S_IXUSR | S_IXGRP | S_IXOTH | S_IRUSR | S_IRGRP | S_IROTH | S_IWUSR));
+
+#endif /* __unix__ */
+
     }
 }

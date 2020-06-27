@@ -20,14 +20,6 @@ set(sourceFiles ${sourceFiles} "StdSocket.cpp")
 
 add_executable(RADRunner ${sourceFiles})
 
-find_package(Qt5 COMPONENTS Core Network Widgets)
-
-if(${Qt5_FOUND} EQUAL 1)
-	message(STATUS "Configuring using Qt5 directory ${Qt5_DIR}")
-
-	target_link_libraries(RADRunner Qt5::Widgets)
-endif()
-
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 	set(CMAKE_EXE_LINKER_FLAGS "/SUBSYSTEM:CONSOLE")
 	set_target_properties(RADRunner PROPERTIES LINK_FLAGS /SUBSYSTEM:CONSOLE)
@@ -37,6 +29,10 @@ target_include_directories(RADRunner PRIVATE "../StdFuncs")
 
 find_library(StdFuncs StdFuncs PATHS ../StdFuncs PATH_SUFFIXES build)
 target_link_libraries(RADRunner ${StdFuncs})
+
+if(WIN32)
+	target_link_libraries(RADRunner "libwsock32.a")
+endif()
 
 if(USE_CLANG_TIDY)
 	find_program(ClangTidy NAMES "clang-tidy")

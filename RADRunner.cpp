@@ -4,11 +4,21 @@
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/select.h>
 #include "ClientCommands.h"
 #include "DirWrapper.h"
 #include "ServerCommands.h"
 #include "StdSocket.h"
+
+#ifdef WIN32
+
+// TODO: CAW - This is temporary until we have a better way of handling select()
+#include <winsock2.h>
+
+#else /* ! WIN32 */
+
+#include <sys/select.h>
+
+#endif /* ! WIN32 */
 
 #define ARGS_EXECUTE 0
 #define ARGS_SEND 1

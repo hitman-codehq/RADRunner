@@ -2,12 +2,6 @@
 #include "StdFuncs.h"
 #include "StdSocket.h"
 
-#ifdef WIN32
-
-#include <winsock.h>
-
-#endif /* WIN32 */
-
 #ifdef __unix__
 
 #include <netdb.h>
@@ -15,11 +9,18 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 
-#endif /* __unix__ */
-
 #define closesocket(socket) close(socket)
 #define INVALID_SOCKET -1
 #define SOCKET_ERROR -1
+
+#elif defined(__amigaos4__)
+
+#else /* ! __amigaos4__ */
+
+#include <winsock2.h>
+#include <ws2tcpip.h>
+
+#endif /* ! __amigaos4__ */
 
 /**
  * Short description.
@@ -38,38 +39,42 @@ RSocket::RSocket()
 }
 
 /**
- * Short description.
- * Long multi line description.
- *
- * @pre		Some precondition here
+ * Opens a socket in either client or server mode.
+ * Depending on whether a host name is specified, this method will open a socket for use either as a client
+ * or a server.  If a host is specified, it will be resolved and a connection made to the remote server.
+ * The host can be either a host name such as codehq.org or an IP address.  If no host is specified, the
+ * socket will be opened in a state suitable for listening.
  *
  * @date	Saturday 11-Feb-2017 4:37 pm, Code HQ Habersaathstrasse
- * @param	Parameter		Description
- * @return	Return value
+ * @param	a_pccHost		The name of the host, an IP address or NULL
+ * @return	KErrNone if successful
+ * @return	KErrGeneral if the socket could not be opened
+ * @return	KErrHostNotFound if the host could not be resolved
  */
 
-int RSocket::Open(const char *a_pccAddress)
+int RSocket::Open(const char *a_pccHost)
 {
 	int RetVal;
 	struct hostent *HostEnt;
 	struct in_addr *InAddr;
 	struct sockaddr_in SockAddr;
 
+	RetVal = KErrGeneral;
+
 #ifdef WIN32
 
 	WSAData WSAData;
 
+	if (WSAStartup(MAKEWORD(2, 2), &WSAData) == 0)
+
 #endif /* WIN32 */
 
-	RetVal = KErrGeneral;
-
-	//if (WSAStartup(MAKEWORD(2, 2), &WSAData) == 0)
 	{
 		if ((m_iSocket = socket(AF_INET, SOCK_STREAM, 0)) != INVALID_SOCKET)
 		{
-			if (a_pccAddress)
+			if (a_pccHost)
 			{
-				if ((HostEnt = gethostbyname(a_pccAddress)) != NULL)
+				if ((HostEnt = gethostbyname(a_pccHost)) != NULL)
 				{
 					InAddr = (struct in_addr *) HostEnt->h_addr_list[0];
 
@@ -81,6 +86,10 @@ int RSocket::Open(const char *a_pccAddress)
 					{
 						RetVal = KErrNone;
 					}
+				}
+				else
+				{
+					RetVal = KErrHostNotFound;
 				}
 			}
 			else

@@ -9,6 +9,7 @@ private:
 	int		m_iServerSocket;
 
 public:
+
 	int		m_iSocket;
 
 public:
