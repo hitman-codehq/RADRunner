@@ -189,9 +189,9 @@ int RSocket::Listen(short a_sPort)
  * @return	Return value
  */
 
-int RSocket::Read(char *a_pcBuffer, int a_iSize)
+int RSocket::Read(void *a_pvBuffer, int a_iSize)
 {
-	return(recv(m_iSocket, a_pcBuffer, a_iSize, 0));
+	return(recv(m_iSocket, a_pvBuffer, a_iSize, 0));
 }
 
 /**
@@ -205,7 +205,7 @@ int RSocket::Read(char *a_pcBuffer, int a_iSize)
  * @return	Return value
  */
 
-int RSocket::Write(const char *a_pccBuffer, int a_iSize)
+int RSocket::Write(const void *a_pcvBuffer, int a_iSize)
 {
-	return(send(m_iSocket, a_pccBuffer, a_iSize, 0));
+	return(send(m_iSocket, a_pcvBuffer, a_iSize, 0));
 }

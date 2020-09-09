@@ -27,9 +27,9 @@ public:
 
 	int Listen(short a_sPort);
 
-	int Read(char *a_pcBuffer, int a_iSize);
+	int Read(void *a_pvBuffer, int a_iSize);
 
-	int Write(const char *a_pccBuffer, int a_iSize);
+	int Write(const void *a_pcvBuffer, int a_iSize);
 };
 
 #endif /* ! STDSOCKET_H */
