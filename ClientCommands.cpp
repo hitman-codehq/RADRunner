@@ -6,8 +6,8 @@
 
 const struct SCommand g_commands[] =
 {
-	{ "execute", 11 },
-	{ "send", 8 },
+	{ "execute", 7 },
+	{ "send", 4 },
 	{ "shutdown", 8 }
 };
 
@@ -64,6 +64,8 @@ void Send(RSocket &a_socket, const char *a_fileName)
 				fseek(file, 0, SEEK_END);
 				totalSize = ftell(file);
 				fseek(file, 0, SEEK_SET);
+
+				a_socket.Write(&totalSize, sizeof(totalSize));
 
 				while ((size = fread(buffer, 1, sizeof(buffer), file)) > 0)
 				{

@@ -47,21 +47,25 @@ void ExecuteServer()
 void ReceiveFile(RSocket &a_socket)
 {
 	char buffer[1024]; // TODO: CAW
+	long fileSize;
 	std::string message;
 	FILE *file;
 
 	message = "ok";
 	a_socket.Write(message.c_str(), message.length());
 
+	a_socket.Read(&fileSize, sizeof(fileSize));
+	printf("Receiving file of size %ld\n", fileSize);
+
 	file = fopen(outfileName, "wb");
 
 	if (file != nullptr)
 	{
-		int bytesRead = 0, bytesToRead, size, totalSize = 8144; // TODO: CAW - This should be sent by the client
+		int bytesRead = 0, bytesToRead, size;
 
 		do
 		{
-			bytesToRead = ((totalSize - bytesRead) >= sizeof(buffer)) ? sizeof(buffer) : (totalSize - bytesRead); // TODO: CAW
+			bytesToRead = ((fileSize - bytesRead) >= sizeof(buffer)) ? sizeof(buffer) : (fileSize - bytesRead); // TODO: CAW
 			size = a_socket.Read(buffer, bytesToRead); // TODO: CAW - Error checking all through here
 
 			if (size > 0)
@@ -70,7 +74,7 @@ void ReceiveFile(RSocket &a_socket)
 				bytesRead += size;
 			}
 		}
-		while (bytesRead < totalSize); // TODO: CAW - Handle failure
+		while (bytesRead < fileSize); // TODO: CAW - Handle failure
 
 		printf("send: Wrote %d bytes to file \"%s\"\n", bytesRead, outfileName);
 
