@@ -18,18 +18,18 @@ public:
 
 	~RSocket()
 	{
-		Close();
+		close();
 	}
 
-	int Open(const char *a_pccAddress);
+	int open(const char *a_pccAddress);
 
-	void Close();
+	void close();
 
 	int Listen(short a_sPort);
 
-	int Read(void *a_pvBuffer, int a_iSize);
+	int read(void *a_pvBuffer, int a_iSize);
 
-	int Write(const void *a_pcvBuffer, int a_iSize);
+	int write(const void *a_pcvBuffer, int a_iSize);
 };
 
 #endif /* ! STDSOCKET_H */

@@ -19,9 +19,9 @@ struct SCommand
 
 extern const struct SCommand g_commands[];
 
-void Execute(RSocket &a_socket, const char *a_fileName);
+void execute(RSocket &a_socket, const char *a_fileName);
 
-void Send(RSocket &a_socket, const char *a_fileName);
+void send(RSocket &a_socket, const char *a_fileName);
 
 void Shutdown(RSocket &a_socket);
 

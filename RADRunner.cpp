@@ -92,7 +92,7 @@ void StartServer()
 
 	do
 	{
-		if ((result = g_socket.Open(NULL)) == KErrNone)
+		if ((result = g_socket.open(nullptr)) == KErrNone)
 		{
 			printf("Listening for a client connection... ");
 			fflush(stdout);
@@ -108,11 +108,11 @@ void StartServer()
 
 				do
 				{
-					selectResult = select(FD_SETSIZE, &socketSet, NULL, NULL, NULL);
+					selectResult = select(FD_SETSIZE, &socketSet, nullptr, nullptr, nullptr);
 
 					if (selectResult > 0)
 					{
-						if ((length = g_socket.Read(buffer, sizeof(buffer))) > 0)
+						if ((length = g_socket.read(buffer, sizeof(buffer) - 1)) > 0)
 						{
 							buffer[length] = '\0';
 							printf("Received request \"%s\"\n", buffer);
@@ -135,7 +135,7 @@ void StartServer()
 								printf("Invalid command received: %s\n", buffer);
 
 								message = "invalid"; // TODO: CAW - Write these strings directly
-								g_socket.Write(message.c_str(), message.length());
+								g_socket.write(message.c_str(), message.length());
 							}
 						}
 						else
@@ -159,7 +159,7 @@ void StartServer()
 				shutdown = true;
 			}
 
-			g_socket.Close();
+			g_socket.close();
 		}
 		else
 		{
@@ -188,6 +188,9 @@ void StartServer()
  * @return	Return value
  */
 
+struct Library *IconBase;
+struct IntuitionBase *IntuitionBase;
+
 int main(int a_argc, const char *a_argv[])
 {
 	int length, result;
@@ -197,9 +200,17 @@ int main(int a_argc, const char *a_argv[])
 
 	signal(SIGINT, SignalHandler);
 
+#ifdef __amigaos__
+
+	// TODO: CAW - Move these
+	IconBase = OpenLibrary("icon.library", 40);
+	IntuitionBase = (struct IntuitionBase *) OpenLibrary("intuition.library", 40);
+
+#endif /* __amigaos__ */
+
 	/* Parse the command line parameters passed in and make sure they are formatted correctly */
 
-	if ((result = g_args.Open(g_template, ARGS_NUM_ARGS, a_argv, a_argc)) == KErrNone)
+	if ((result = g_args.open(g_template, ARGS_NUM_ARGS, a_argv, a_argc)) == KErrNone)
 	{
 		if (g_args[ARGS_SERVER] != nullptr)
 		{
@@ -207,16 +218,17 @@ int main(int a_argc, const char *a_argv[])
 		}
 		else
 		{
-			if (g_socket.Open("localhost") == KErrNone)
+			// TODO: CAW - How to pass this in as a parameter?
+			if (g_socket.open("vampire") == KErrNone)
 			{
 				if (g_args[ARGS_EXECUTE] != nullptr)
 				{
-					Execute(g_socket, g_args[ARGS_EXECUTE]);
+					execute(g_socket, g_args[ARGS_EXECUTE]);
 				}
 
 				if (g_args[ARGS_SEND] != nullptr)
 				{
-					Send(g_socket, g_args[ARGS_SEND]);
+					send(g_socket, g_args[ARGS_SEND]);
 				}
 
 				if (g_args[ARGS_SHUTDOWN] != nullptr)
@@ -224,7 +236,7 @@ int main(int a_argc, const char *a_argv[])
 					Shutdown(g_socket);
 				}
 
-				g_socket.Close();
+				g_socket.close();
 			}
 			else
 			{
@@ -232,7 +244,7 @@ int main(int a_argc, const char *a_argv[])
 			}
 		}
 
-		g_args.Close();
+		g_args.close();
 	}
 	else
 	{

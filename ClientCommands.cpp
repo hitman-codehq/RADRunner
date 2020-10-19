@@ -22,10 +22,43 @@ const struct SCommand g_commands[] =
  * @return	Return value
  */
 
-void Execute(RSocket &a_socket, const char *a_fileName)
+void execute(RSocket &a_socket, const char *a_fileName)
 {
-	a_socket.Write(g_commands[EExecute].m_command, g_commands[EExecute].m_length);
+	a_socket.write(g_commands[EExecute].m_command, g_commands[EExecute].m_length);
 }
+
+// TODO: CAW - Move this to somewhere better
+#ifdef __amigaos__
+#define SWAP(number)
+#else /* ! __amigaos__ */
+#define SWAP(number) Swap(number)
+
+/**
+ * Short description.
+ * Long multi line description.
+ *
+ * @pre		Some precondition here
+ *
+ * @date	Saturday 10-Oct-2020 10:25 pm, Code HQ Bergmannstrasse
+ * @param	Parameter		Description
+ * @return	Return value
+ */
+
+void Swap(long *a_plNumber)
+{
+	unsigned char temp;
+	unsigned char *number = (unsigned char *) a_plNumber;
+
+	temp = number[0];
+	number[0] = number[3];
+	number[3] = temp;
+
+	temp = number[1];
+	number[1] = number[2];
+	number[2] = temp;
+}
+
+#endif /* ! __amigaos__ */
 
 /**
  * Short description.
@@ -38,7 +71,7 @@ void Execute(RSocket &a_socket, const char *a_fileName)
  * @return	Return value
  */
 
-void Send(RSocket &a_socket, const char *a_fileName)
+void send(RSocket &a_socket, const char *a_fileName)
 {
 	char buffer[1024]; // TODO: CAW
 	int length, result;
@@ -52,9 +85,9 @@ void Send(RSocket &a_socket, const char *a_fileName)
 		return;
 	}
 
-	if (a_socket.Write(g_commands[ESend].m_command, g_commands[ESend].m_length) > 0)
+	if (a_socket.write(g_commands[ESend].m_command, g_commands[ESend].m_length) > 0)
 	{
-		if ((length = a_socket.Read(buffer, sizeof(buffer))) > 0) // TODO: CAW - Size
+		if ((length = a_socket.read(buffer, sizeof(buffer))) > 0) // TODO: CAW - Size
 		{
 			buffer[length] = '\0';
 
@@ -65,11 +98,12 @@ void Send(RSocket &a_socket, const char *a_fileName)
 				totalSize = ftell(file);
 				fseek(file, 0, SEEK_SET);
 
-				a_socket.Write(&totalSize, sizeof(totalSize));
+				SWAP(&totalSize);
+				a_socket.write(&totalSize, sizeof(totalSize));
 
 				while ((size = fread(buffer, 1, sizeof(buffer), file)) > 0)
 				{
-					a_socket.Write(buffer, size);
+					a_socket.write(buffer, size);
 				}
 			}
 		}
@@ -91,5 +125,5 @@ void Send(RSocket &a_socket, const char *a_fileName)
 
 void Shutdown(RSocket &a_socket)
 {
-	a_socket.Write(g_commands[EShutdown].m_command, g_commands[EShutdown].m_length);
+	a_socket.write(g_commands[EShutdown].m_command, g_commands[EShutdown].m_length);
 }

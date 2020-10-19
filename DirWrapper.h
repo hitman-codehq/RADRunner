@@ -6,7 +6,7 @@ class RDirWrapper
 {
 public:
 
-	void Close();
+	void close();
 };
 
 #endif /* ! DIRWRAPPER_H */

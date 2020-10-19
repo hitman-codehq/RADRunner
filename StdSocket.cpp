@@ -2,25 +2,22 @@
 #include "StdFuncs.h"
 #include "StdSocket.h"
 
-#ifdef __unix__
+#if defined(__unix__) || defined(__amigaos__)
 
 #include <netdb.h>
 #include <unistd.h>
-#include <netinet/in.h>
 #include <sys/socket.h>
 
-#define closesocket(socket) close(socket)
+#define closesocket(socket) ::close(socket)
 #define INVALID_SOCKET -1
 #define SOCKET_ERROR -1
 
-#elif defined(__amigaos4__)
-
-#else /* ! __amigaos4__ */
+#else /* ! defined(__unix__) || defined(__amigaos__) */
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
-#endif /* ! __amigaos4__ */
+#endif /* ! defined(__unix__) || defined(__amigaos__) */
 
 /**
  * Short description.
@@ -52,7 +49,7 @@ RSocket::RSocket()
  * @return	KErrHostNotFound if the host could not be resolved
  */
 
-int RSocket::Open(const char *a_pccHost)
+int RSocket::open(const char *a_pccHost)
 {
 	int RetVal;
 	struct hostent *HostEnt;
@@ -74,7 +71,7 @@ int RSocket::Open(const char *a_pccHost)
 		{
 			if (a_pccHost)
 			{
-				if ((HostEnt = gethostbyname(a_pccHost)) != NULL)
+				if ((HostEnt = gethostbyname(a_pccHost)) != nullptr)
 				{
 					InAddr = (struct in_addr *) HostEnt->h_addr_list[0];
 
@@ -113,7 +110,7 @@ int RSocket::Open(const char *a_pccHost)
  * @return	Return value
  */
 
-void RSocket::Close()
+void RSocket::close()
 {
 	if (m_iSocket != INVALID_SOCKET)
 	{
@@ -189,9 +186,9 @@ int RSocket::Listen(short a_sPort)
  * @return	Return value
  */
 
-int RSocket::Read(void *a_pvBuffer, int a_iSize)
+int RSocket::read(void *a_pvBuffer, int a_iSize)
 {
-	return(recv(m_iSocket, a_pvBuffer, a_iSize, 0));
+	return(recv(m_iSocket, (char *) a_pvBuffer, a_iSize, 0));
 }
 
 /**
@@ -205,7 +202,7 @@ int RSocket::Read(void *a_pvBuffer, int a_iSize)
  * @return	Return value
  */
 
-int RSocket::Write(const void *a_pcvBuffer, int a_iSize)
+int RSocket::write(const void *a_pcvBuffer, int a_iSize)
 {
-	return(send(m_iSocket, a_pcvBuffer, a_iSize, 0));
+	return(send(m_iSocket, (char *) a_pcvBuffer, a_iSize, 0));
 }

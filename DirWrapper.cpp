@@ -12,6 +12,7 @@
  * @param	Parameter		Description
  * @return	Return value
  */
-void RDirWrapper::Close()
+
+void RDirWrapper::close()
 {
 }

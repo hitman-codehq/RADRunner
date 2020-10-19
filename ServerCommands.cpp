@@ -52,9 +52,9 @@ void ReceiveFile(RSocket &a_socket)
 	FILE *file;
 
 	message = "ok";
-	a_socket.Write(message.c_str(), message.length());
+	a_socket.write(message.c_str(), message.length());
 
-	a_socket.Read(&fileSize, sizeof(fileSize));
+	a_socket.read(&fileSize, sizeof(fileSize));
 	printf("Receiving file of size %ld\n", fileSize);
 
 	file = fopen(outfileName, "wb");
@@ -66,7 +66,7 @@ void ReceiveFile(RSocket &a_socket)
 		do
 		{
 			bytesToRead = ((fileSize - bytesRead) >= sizeof(buffer)) ? sizeof(buffer) : (fileSize - bytesRead); // TODO: CAW
-			size = a_socket.Read(buffer, bytesToRead); // TODO: CAW - Error checking all through here
+			size = a_socket.read(buffer, bytesToRead); // TODO: CAW - Error checking all through here
 
 			if (size > 0)
 			{
@@ -80,11 +80,16 @@ void ReceiveFile(RSocket &a_socket)
 
 		fclose(file);
 
-		#ifdef __unix__
+#ifdef __amigaos__
+
+		Utils::setProtection(outfileName, 0);
+
+#elif defined(__unix__)
 
 		// TODO: CAW - Error checking + these need to be abstracted and passed as a part of the message
-		Utils::SetProtection(outfileName, (S_IXUSR | S_IXGRP | S_IXOTH | S_IRUSR | S_IRGRP | S_IROTH | S_IWUSR));
+		Utils::setProtection(outfileName, (S_IXUSR | S_IXGRP | S_IXOTH | S_IRUSR | S_IRGRP | S_IROTH | S_IWUSR));
 
-		#endif /* __unix__ */
+#endif /* __unix__ */
+
 	}
 }
