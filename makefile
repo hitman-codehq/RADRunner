@@ -1,22 +1,21 @@
 
 CFLAGS = -c -fno-asynchronous-unwind-tables -fno-exceptions -Wall -Wextra -Wwrite-strings -DMUNGWALL_NO_LINE_TRACKING
-IFLAGS = -IStdFuncs
-LFLAGS = -LStdFuncs/$(OBJ)
+IFLAGS = -I../StdFuncs
+LFLAGS = -L../StdFuncs/$(OBJ)
 LIBS = -lStdFuncs -lnet
 
 ifdef PREFIX
 	AR = @$(PREFIX)ar
 	CC = @$(PREFIX)g++
 	LD = @$(PREFIX)g++
-	LFLAGS = $(LFLAGS) -mcrt=clib2
+	LFLAGS += -mcrt=clib2
 	STRIP = @$(PREFIX)strip
-	IFLAGS := -I. -IStdFuncs -I../SDK/AHI/Include
 else
 	AR = @ar
 	CC = @g++
 	LD = @g++
 	STRIP = @strip
-	IFLAGS := -I. -IStdFuncs -ISDK:NDK_3.9/Include/include_h -ISDK:AHI/Include
+	IFLAGS := -ISDK:NDK_3.9/Include/include_h -ISDK:AHI/Include
 endif
 
 ifdef DEBUG
@@ -31,11 +30,10 @@ UNAME = $(shell uname)
 
 ifeq ($(UNAME), AmigaOS)
 
+# TODO: CAW - Fix or remove this
 #LIBS += -lauto
 
 endif
-
-LFLAGS += -L../StdFuncs/$(OBJ)
 
 EXECUTABLE = $(OBJ)/RADRunner
 
