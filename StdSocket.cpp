@@ -1,5 +1,5 @@
 
-#include "StdFuncs.h"
+#include <StdFuncs.h>
 #include "StdSocket.h"
 
 #if defined(__unix__) || defined(__amigaos__)
@@ -91,7 +91,14 @@ int RSocket::open(const char *a_pccHost)
 			}
 			else
 			{
-				RetVal = KErrNone;
+				/* When running as a host, enable SO_LINGER to ensure that socket is cleanly closed and can thus be */
+				/* immediately reopened for the next client connection */
+				struct linger Linger = { 1, 0 };
+
+				if (setsockopt(m_iSocket, SOL_SOCKET, SO_LINGER, (const char *) &Linger, sizeof(Linger)) == 0)
+				{
+					RetVal = KErrNone;
+				}
 			}
 		}
 	}
