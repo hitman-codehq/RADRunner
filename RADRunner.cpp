@@ -15,11 +15,12 @@
 
 #endif /* ! WIN32 */
 
-#define ARGS_EXECUTE 0
+#define ARGS_REMOTE 0
 #define ARGS_SEND 1
-#define ARGS_SERVER 2
-#define ARGS_SHUTDOWN 3
-#define ARGS_NUM_ARGS 4
+#define ARGS_EXECUTE 2
+#define ARGS_SERVER 3
+#define ARGS_SHUTDOWN 4
+#define ARGS_NUM_ARGS 5
 
 #ifdef __amigaos4__
 
@@ -48,7 +49,7 @@ static const char __attribute__((used)) g_stackCookie[] = "$STACK:262144";
 /* Template for use in obtaining command line parameters.  Remember to change the indexes */
 /* in Scanner.h if the ordering or number of these change */
 
-static const char g_template[] = "EXECUTE/S,SEND/M,SERVER/S,SHUTDOWN/S";
+static const char g_template[] = "REMOTE/A,SEND,EXECUTE/S,SERVER/S,SHUTDOWN/S";
 
 static volatile bool g_break;		/* Set to true if when ctrl-c is hit by the user */
 static RArgs g_args;				/* Contains the parsed command line arguments */
@@ -213,30 +214,37 @@ int main(int a_argc, const char *a_argv[])
 		}
 		else
 		{
-			// TODO: CAW - How to pass this in as a parameter?
-			if (g_socket.open("vampire") == KErrNone)
+			if (g_args[ARGS_REMOTE] != nullptr)
 			{
-				if (g_args[ARGS_EXECUTE] != nullptr)
+				if (g_socket.open(g_args[ARGS_REMOTE]) == KErrNone)
 				{
-					execute(g_socket, g_args[ARGS_EXECUTE]);
-				}
+					if (g_args[ARGS_EXECUTE] != nullptr)
+					{
+						execute(g_socket, g_args[ARGS_EXECUTE]);
+					}
 
-				if (g_args[ARGS_SEND] != nullptr)
+					if (g_args[ARGS_SEND] != nullptr)
+					{
+						send(g_socket, g_args[ARGS_SEND]);
+					}
+
+					if (g_args[ARGS_SHUTDOWN] != nullptr)
+					{
+						Shutdown(g_socket);
+					}
+
+					g_socket.close();
+				}
+				else
 				{
-					send(g_socket, g_args[ARGS_SEND]);
+					Utils::Error("Cannot connect to %s", g_args[ARGS_REMOTE]);
 				}
-
-				if (g_args[ARGS_SHUTDOWN] != nullptr)
-				{
-					Shutdown(g_socket);
-				}
-
-				g_socket.close();
 			}
 			else
 			{
-				Utils::Error("Cannot connect to localhost"); // TODO: CAW
+				Utils::Error("REMOTE argument must be specified");
 			}
+
 		}
 
 		g_args.close();
