@@ -3,9 +3,10 @@ cmake_minimum_required(VERSION 3.7.1)
 
 project(RADRunner)
 
-# TODO: CAW - Add -Wall etc.
 if(MSVC)
-	add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+	add_compile_definitions(_CRT_SECURE_NO_WARNINGS _WINSOCK_DEPRECATED_NO_WARNINGS)
+else()
+	add_compile_options(-fno-asynchronous-unwind-tables -fno-strict-aliasing -Wall -Wextra -Wwrite-strings)
 endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -20,7 +21,9 @@ set(sourceFiles ${sourceFiles} "StdSocket.cpp")
 
 add_executable(RADRunner ${sourceFiles})
 
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+set_property(TARGET RADRunner PROPERTY CXX_STANDARD 14)
+
+if(MSVC)
 	set(CMAKE_EXE_LINKER_FLAGS "/SUBSYSTEM:CONSOLE")
 	set_target_properties(RADRunner PROPERTIES LINK_FLAGS /SUBSYSTEM:CONSOLE)
 endif()
@@ -31,7 +34,7 @@ find_library(StdFuncs StdFuncs PATHS ../StdFuncs PATH_SUFFIXES build)
 target_link_libraries(RADRunner ${StdFuncs})
 
 if(WIN32)
-	target_link_libraries(RADRunner "libwsock32.a")
+	target_link_libraries(RADRunner "wsock32")
 endif()
 
 if(USE_CLANG_TIDY)
@@ -41,5 +44,7 @@ if(USE_CLANG_TIDY)
 		message(STATUS "Found clang-tidy as ${ClangTidy}")
 		set(RunClangTidy ${ClangTidy})
 		set_target_properties(RADRunner PROPERTIES C_CLANG_TIDY "${RunClangTidy}" CXX_CLANG_TIDY "${RunClangTidy}")
+	else()
+		message(STATUS "clang-tidy not found, so will not be used")
 	endif()
 endif()

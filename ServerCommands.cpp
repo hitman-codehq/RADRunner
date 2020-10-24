@@ -3,7 +3,6 @@
 #include "ServerCommands.h"
 #include "StdSocket.h"
 #include <sys/stat.h>
-#include <unistd.h>
 
 #ifdef __unix__
 
@@ -47,7 +46,7 @@ void ExecuteServer()
 void ReceiveFile(RSocket &a_socket)
 {
 	char buffer[1024]; // TODO: CAW
-	long fileSize;
+	uint32_t fileSize;
 	std::string message;
 	FILE *file;
 
@@ -55,7 +54,7 @@ void ReceiveFile(RSocket &a_socket)
 	a_socket.write(message.c_str(), message.length());
 
 	a_socket.read(&fileSize, sizeof(fileSize));
-	printf("Receiving file of size %ld\n", fileSize);
+	printf("Receiving file of size %u\n", fileSize);
 
 	file = fopen(outfileName, "wb");
 
@@ -65,7 +64,7 @@ void ReceiveFile(RSocket &a_socket)
 
 		do
 		{
-			bytesToRead = ((fileSize - bytesRead) >= sizeof(buffer)) ? sizeof(buffer) : (fileSize - bytesRead); // TODO: CAW
+			bytesToRead = ((fileSize - bytesRead) >= sizeof(buffer)) ? sizeof(buffer) : (fileSize - bytesRead);
 			size = a_socket.read(buffer, bytesToRead); // TODO: CAW - Error checking all through here
 
 			if (size > 0)
@@ -74,9 +73,9 @@ void ReceiveFile(RSocket &a_socket)
 				bytesRead += size;
 			}
 		}
-		while (bytesRead < fileSize); // TODO: CAW - Handle failure
+		while (bytesRead < static_cast<int>(fileSize)); // TODO: CAW - Handle failure
 
-		printf("send: Wrote %d bytes to file \"%s\"\n", bytesRead, outfileName);
+		printf("ReceiveFile: Wrote %d bytes to file \"%s\"\n", bytesRead, outfileName);
 
 		fclose(file);
 

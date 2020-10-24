@@ -74,7 +74,7 @@ void Swap(long *a_plNumber)
 void send(RSocket &a_socket, const char *a_fileName)
 {
 	char buffer[1024]; // TODO: CAW
-	int length, result;
+	int length;
 	long size, totalSize;
 	FILE *file;
 

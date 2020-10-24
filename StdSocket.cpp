@@ -14,7 +14,6 @@
 
 #else /* ! defined(__unix__) || defined(__amigaos__) */
 
-#include <winsock2.h>
 #include <ws2tcpip.h>
 
 #endif /* ! defined(__unix__) || defined(__amigaos__) */
@@ -152,8 +151,9 @@ void RSocket::close()
 
 int RSocket::Listen(short a_sPort)
 {
-	int RetVal, Socket;
+	int RetVal;
 	socklen_t ClientSize;
+	SOCKET Socket;
 	struct sockaddr_in Server, Client;
 
 	RetVal = KErrGeneral;

@@ -9,12 +9,7 @@
 #include "ServerCommands.h"
 #include "StdSocket.h"
 
-#ifdef WIN32
-
-// TODO: CAW - This is temporary until we have a better way of handling select()
-#include <winsock2.h>
-
-#else /* ! WIN32 */
+#ifndef WIN32
 
 #include <sys/select.h>
 
@@ -193,7 +188,7 @@ struct IntuitionBase *IntuitionBase;
 
 int main(int a_argc, const char *a_argv[])
 {
-	int length, result;
+	int result;
 
 	/* Install a ctrl-c handler so we can handle ctrl-c being pressed and shut down the scan */
 	/* properly */

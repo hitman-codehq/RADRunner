@@ -2,15 +2,25 @@
 #ifndef STDSOCKET_H
 #define STDSOCKET_H
 
+#ifdef WIN32
+
+#include <winsock2.h>
+
+#else /* ! WIN32 */
+
+typedef int SOCKET;
+
+#endif /* ! WIN32 */
+
 class RSocket
 {
 private:
 
-	int		m_iServerSocket;
+	SOCKET	m_iServerSocket;
 
 public:
 
-	int		m_iSocket;
+	SOCKET	m_iSocket;
 
 public:
 

@@ -1,5 +1,5 @@
 
-CFLAGS = -c -fno-asynchronous-unwind-tables -fno-exceptions -Wall -Wextra -Wwrite-strings -DMUNGWALL_NO_LINE_TRACKING
+CFLAGS = -c -fno-asynchronous-unwind-tables -fno-exceptions -std=c++14 -Wall -Wextra -Wwrite-strings -DMUNGWALL_NO_LINE_TRACKING
 IFLAGS = -I../StdFuncs
 LFLAGS = -L../StdFuncs/$(OBJ)
 LIBS = -lStdFuncs -lnet
@@ -44,7 +44,7 @@ All: $(OBJ) $(EXECUTABLE)
 $(OBJ):
 	@mkdir $(OBJ)
 
-$(EXECUTABLE): $(OBJECTS) StdFuncs/$(OBJ)/libStdFuncs.a
+$(EXECUTABLE): $(OBJECTS) ../StdFuncs/$(OBJ)/libStdFuncs.a
 	@echo Linking $@...
 	$(LD) $(OBJECTS) $(LFLAGS) $(LIBS) -o $@.debug
 	$(STRIP) -R.comment $@.debug -o $@
