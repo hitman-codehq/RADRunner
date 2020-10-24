@@ -4,6 +4,16 @@
 #include "StdSocket.h"
 #include <sys/stat.h>
 
+#ifdef __amigaos__
+
+#define SWAP(number)
+
+#else /* ! __amigaos__ */
+
+#define SWAP(number) Utils::swap32(number)
+
+#endif /* ! __amigaos__ */
+
 #ifdef __unix__
 
 static const char outfileName[] = "./outfile";
@@ -54,6 +64,8 @@ void ReceiveFile(RSocket &a_socket)
 	a_socket.write(message.c_str(), message.length());
 
 	a_socket.read(&fileSize, sizeof(fileSize));
+	SWAP(&fileSize);
+
 	printf("Receiving file of size %u\n", fileSize);
 
 	file = fopen(outfileName, "wb");

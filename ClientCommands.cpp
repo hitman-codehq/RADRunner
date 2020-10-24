@@ -4,6 +4,16 @@
 #include "ClientCommands.h"
 #include "StdSocket.h"
 
+#ifdef __amigaos__
+
+#define SWAP(number)
+
+#else /* ! __amigaos__ */
+
+#define SWAP(number) Utils::swap32(number)
+
+#endif /* ! __amigaos__ */
+
 const struct SCommand g_commands[] =
 {
 	{ "execute", 7 },
@@ -27,39 +37,6 @@ void execute(RSocket &a_socket, const char *a_fileName)
 	a_socket.write(g_commands[EExecute].m_command, g_commands[EExecute].m_length);
 }
 
-// TODO: CAW - Move this to somewhere better
-#ifdef __amigaos__
-#define SWAP(number)
-#else /* ! __amigaos__ */
-#define SWAP(number) Swap(number)
-
-/**
- * Short description.
- * Long multi line description.
- *
- * @pre		Some precondition here
- *
- * @date	Saturday 10-Oct-2020 10:25 pm, Code HQ Bergmannstrasse
- * @param	Parameter		Description
- * @return	Return value
- */
-
-void Swap(long *a_plNumber)
-{
-	unsigned char temp;
-	unsigned char *number = (unsigned char *) a_plNumber;
-
-	temp = number[0];
-	number[0] = number[3];
-	number[3] = temp;
-
-	temp = number[1];
-	number[1] = number[2];
-	number[2] = temp;
-}
-
-#endif /* ! __amigaos__ */
-
 /**
  * Short description.
  * Long multi line description.
@@ -75,7 +52,8 @@ void send(RSocket &a_socket, const char *a_fileName)
 {
 	char buffer[1024]; // TODO: CAW
 	int length;
-	long size, totalSize;
+	long size;
+	uint32_t totalSize;
 	FILE *file;
 
 	if ((file = fopen(a_fileName, "rb")) == nullptr)
