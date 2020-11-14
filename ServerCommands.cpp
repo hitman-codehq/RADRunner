@@ -38,8 +38,19 @@ static const char outfileName[] = "outfile.exe";
 // TODO: CAW - This name is as bad as the American girl's English (like, like) in the seat behind me
 void ExecuteServer()
 {
+	int result;
+
 	printf("execute: Executing command \"%s\"\n", outfileName);
-	system(outfileName);
+	result = system(outfileName);
+
+	if ((result == -1) || (result == 127))
+	{
+		printf("Unable to launch command\n");
+	}
+	else if (result != 0)
+	{
+		printf("Command failed, return code = %d\n", WEXITSTATUS(result));
+	}
 }
 
 /**
