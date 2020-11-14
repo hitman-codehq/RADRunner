@@ -14,11 +14,11 @@
 
 #endif /* ! __amigaos__ */
 
-const struct SCommand g_commands[] =
+const char *g_commandNames[] =
 {
-	{ "execute", 7 },
-	{ "send", 4 },
-	{ "shutdown", 8 }
+	"execute",
+	"send",
+	"shutdown"
 };
 
 /**
@@ -34,7 +34,9 @@ const struct SCommand g_commands[] =
 
 void execute(RSocket &a_socket, const char *a_fileName)
 {
-	a_socket.write(g_commands[EExecute].m_command, g_commands[EExecute].m_length);
+	struct SCommand command = { EExecute, 0 };
+
+	a_socket.write(&command, sizeof(command));
 }
 
 /**
@@ -63,7 +65,9 @@ void send(RSocket &a_socket, const char *a_fileName)
 		return;
 	}
 
-	if (a_socket.write(g_commands[ESend].m_command, g_commands[ESend].m_length) > 0)
+	struct SCommand command = { ESend, 0 };
+
+	if (a_socket.write(&command, sizeof(command)) > 0)
 	{
 		if ((length = a_socket.read(buffer, sizeof(buffer))) > 0) // TODO: CAW - Size
 		{
@@ -103,5 +107,7 @@ void send(RSocket &a_socket, const char *a_fileName)
 
 void Shutdown(RSocket &a_socket)
 {
-	a_socket.write(g_commands[EShutdown].m_command, g_commands[EShutdown].m_length);
+	struct SCommand command = { EShutdown, 0};
+
+	a_socket.write(&command, sizeof(command));
 }

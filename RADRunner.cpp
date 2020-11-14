@@ -79,8 +79,8 @@ static RSocket g_socket;
 void StartServer()
 {
 	bool disconnect, shutdown;
-	char buffer[1024]; // TODO: CAW
 	int length, result, selectResult;
+	struct SCommand command;
 	fd_set socketSet;
 	std::string message;
 
@@ -108,27 +108,26 @@ void StartServer()
 
 					if (selectResult > 0)
 					{
-						if ((length = g_socket.read(buffer, sizeof(buffer) - 1)) > 0)
+						if ((length = g_socket.read(&command, sizeof(command))) > 0)
 						{
-							buffer[length] = '\0';
-							printf("Received request \"%s\"\n", buffer);
+							printf("Received request \"%s\"\n", g_commandNames[command.m_command]);
 
-							if (strcmp(buffer, g_commands[EExecute].m_command) == 0)
+							if (command.m_command == EExecute)
 							{
 								ExecuteServer();
 							}
-							else if (strcmp(buffer, g_commands[ESend].m_command) == 0)
+							else if (command.m_command == ESend)
 							{
 								ReceiveFile(g_socket);
 							}
-							else if (strcmp(buffer, g_commands[EShutdown].m_command) == 0)
+							else if (command.m_command == EShutdown)
 							{
 								shutdown = true;
 								printf("shutdown: Exiting\n");
 							}
 							else
 							{
-								printf("Invalid command received: %s\n", buffer);
+								printf("Invalid command received: %d\n", command.m_command);
 
 								message = "invalid"; // TODO: CAW - Write these strings directly
 								g_socket.write(message.c_str(), message.length());

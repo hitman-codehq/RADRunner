@@ -13,11 +13,11 @@ enum TCommands
 
 struct SCommand
 {
-	const char	*m_command;
-	int			m_length;
+	uint32_t	m_command;	/* Command to be performed by the server */
+	uint32_t	m_length;	/* Length of payload after structure */
 };
 
-extern const struct SCommand g_commands[];
+extern const char *g_commandNames[];
 
 void execute(RSocket &a_socket, const char *a_fileName);
 
