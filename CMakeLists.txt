@@ -19,7 +19,23 @@ set(sourceFiles ${sourceFiles} "ServerCommands.cpp")
 set(sourceFiles ${sourceFiles} "DirWrapper.cpp")
 set(sourceFiles ${sourceFiles} "StdSocket.cpp")
 
-add_executable(RADRunner ${sourceFiles})
+find_package(Qt5 COMPONENTS Core Widgets)
+
+if(${Qt5_FOUND} EQUAL 1)
+	message(STATUS "Configuring using Qt5 directory ${Qt5_DIR}")
+
+	set(CMAKE_AUTOMOC ON)
+	set(CMAKE_AUTORCC ON)
+	set(CMAKE_AUTOUIC ON)
+
+	add_executable(RADRunner ${sourceFiles})
+	add_compile_definitions(QT_GUI_LIB)
+	target_link_libraries(RADRunner Qt5::Core Qt5::Widgets)
+else()
+	message(STATUS "Qt5 not found, configuring basic build")
+
+	add_executable(RADRunner ${sourceFiles})
+endif()
 
 set_property(TARGET RADRunner PROPERTY CXX_STANDARD 14)
 
