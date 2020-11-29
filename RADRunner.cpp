@@ -110,6 +110,9 @@ void StartServer()
 					{
 						if ((length = g_socket.read(&command, sizeof(command))) > 0)
 						{
+							SWAP(&command.m_command);
+							SWAP(&command.m_length);
+
 							printf("Received request \"%s\"\n", g_commandNames[command.m_command]);
 
 							if (command.m_command == EExecute)

@@ -1,18 +1,9 @@
 
 #include <StdFuncs.h>
+#include "ClientCommands.h"
 #include "ServerCommands.h"
 #include "StdSocket.h"
 #include <sys/stat.h>
-
-#ifdef __amigaos__
-
-#define SWAP(number)
-
-#else /* ! __amigaos__ */
-
-#define SWAP(number) Utils::swap32(number)
-
-#endif /* ! __amigaos__ */
 
 #ifdef __unix__
 

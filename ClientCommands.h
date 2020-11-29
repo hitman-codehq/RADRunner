@@ -2,6 +2,16 @@
 #ifndef CLIENTCOMMANDS_H
 #define CLIENTCOMMANDS_H
 
+#ifdef __amigaos__
+
+#define SWAP(number)
+
+#else /* ! __amigaos__ */
+
+#define SWAP(number) Utils::swap32(number)
+
+#endif /* ! __amigaos__ */
+
 class RSocket;
 
 enum TCommands

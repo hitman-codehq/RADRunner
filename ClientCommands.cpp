@@ -4,16 +4,6 @@
 #include "ClientCommands.h"
 #include "StdSocket.h"
 
-#ifdef __amigaos__
-
-#define SWAP(number)
-
-#else /* ! __amigaos__ */
-
-#define SWAP(number) Utils::swap32(number)
-
-#endif /* ! __amigaos__ */
-
 const char *g_commandNames[] =
 {
 	"execute",
@@ -35,6 +25,9 @@ const char *g_commandNames[] =
 void execute(RSocket &a_socket, const char *a_fileName)
 {
 	struct SCommand command = { EExecute, 0 };
+
+	SWAP(&command.m_command);
+	SWAP(&command.m_length);
 
 	a_socket.write(&command, sizeof(command));
 }
@@ -66,6 +59,9 @@ void send(RSocket &a_socket, const char *a_fileName)
 	}
 
 	struct SCommand command = { ESend, 0 };
+
+	SWAP(&command.m_command);
+	SWAP(&command.m_length);
 
 	if (a_socket.write(&command, sizeof(command)) > 0)
 	{
@@ -108,6 +104,9 @@ void send(RSocket &a_socket, const char *a_fileName)
 void Shutdown(RSocket &a_socket)
 {
 	struct SCommand command = { EShutdown, 0};
+
+	SWAP(&command.m_command);
+	SWAP(&command.m_length);
 
 	a_socket.write(&command, sizeof(command));
 }
