@@ -40,7 +40,7 @@ void ExecuteServer()
 	}
 	else if (result != 0)
 	{
-		printf("Command failed, return code = %d\n", WEXITSTATUS(result));
+		printf("Command failed, return code = %d\n", result); // WEXITSTATUS(result));
 	}
 }
 

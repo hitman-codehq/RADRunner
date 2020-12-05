@@ -17,19 +17,33 @@ const char *g_commandNames[] =
  *
  * @pre		Some precondition here
  *
+ * @date	Sunday 29-Nov-2020 12:17 pm, Code HQ Bergmannstrasse
+ * @param	Parameter		Description
+ * @return	Return value
+ */
+
+bool CCommand::send()
+{
+	SWAP(&m_command.m_command);
+	SWAP(&m_command.m_length);
+
+	return (m_socket.write(&m_command, sizeof(m_command)) == sizeof(m_command));
+}
+
+/**
+ * Short description.
+ * Long multi line description.
+ *
+ * @pre		Some precondition here
+ *
  * @date	Wednesday 29-Jan-2020 2:13 pm, Scoot flight TR 735 to Singapore
  * @param	Parameter		Description
  * @return	Return value
  */
 
-void execute(RSocket &a_socket, const char *a_fileName)
+void CExecute::execute()
 {
-	struct SCommand command = { EExecute, 0 };
-
-	SWAP(&command.m_command);
-	SWAP(&command.m_length);
-
-	a_socket.write(&command, sizeof(command));
+	send();
 }
 
 /**
@@ -43,7 +57,7 @@ void execute(RSocket &a_socket, const char *a_fileName)
  * @return	Return value
  */
 
-void send(RSocket &a_socket, const char *a_fileName)
+void CSend::execute()
 {
 	char buffer[1024]; // TODO: CAW
 	int length;
@@ -51,21 +65,16 @@ void send(RSocket &a_socket, const char *a_fileName)
 	uint32_t totalSize;
 	FILE *file;
 
-	if ((file = fopen(a_fileName, "rb")) == nullptr)
+	if ((file = fopen(m_fileName, "rb")) == nullptr)
 	{
-		Utils::Error("Unable to open file \"%s\"", a_fileName);
+		Utils::Error("Unable to open file \"%s\"", m_fileName);
 
 		return;
 	}
 
-	struct SCommand command = { ESend, 0 };
-
-	SWAP(&command.m_command);
-	SWAP(&command.m_length);
-
-	if (a_socket.write(&command, sizeof(command)) > 0)
+	if (send())
 	{
-		if ((length = a_socket.read(buffer, sizeof(buffer))) > 0) // TODO: CAW - Size
+		if ((length = m_socket.read(buffer, sizeof(buffer))) > 0) // TODO: CAW - Size
 		{
 			buffer[length] = '\0';
 
@@ -77,11 +86,12 @@ void send(RSocket &a_socket, const char *a_fileName)
 				fseek(file, 0, SEEK_SET);
 
 				SWAP(&totalSize);
-				a_socket.write(&totalSize, sizeof(totalSize));
+				// TODO: CAW - Check return value here and elsewhere
+				m_socket.write(&totalSize, sizeof(totalSize));
 
 				while ((size = fread(buffer, 1, sizeof(buffer), file)) > 0)
 				{
-					a_socket.write(buffer, size);
+					m_socket.write(buffer, size);
 				}
 			}
 		}
@@ -101,12 +111,7 @@ void send(RSocket &a_socket, const char *a_fileName)
  * @return	Return value
  */
 
-void Shutdown(RSocket &a_socket)
+void CShutdown::execute()
 {
-	struct SCommand command = { EShutdown, 0};
-
-	SWAP(&command.m_command);
-	SWAP(&command.m_length);
-
-	a_socket.write(&command, sizeof(command));
+	send();
 }
