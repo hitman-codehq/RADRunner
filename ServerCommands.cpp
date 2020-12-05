@@ -5,6 +5,12 @@
 #include "StdSocket.h"
 #include <sys/stat.h>
 
+#ifdef __amigaos__
+
+#include <sys/wait.h>
+
+#endif /* __amigaos__ */
+
 #ifdef __unix__
 
 static const char outfileName[] = "./outfile";
@@ -40,7 +46,8 @@ void ExecuteServer()
 	}
 	else if (result != 0)
 	{
-		printf("Command failed, return code = %d\n", result); // WEXITSTATUS(result));
+		// TODO: CAW - Fix this for Windows
+		printf("Command failed, return code = %d\n", result); //WEXITSTATUS(result));
 	}
 }
 

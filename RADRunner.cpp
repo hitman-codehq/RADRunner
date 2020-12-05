@@ -29,8 +29,8 @@
 static const struct Resident g_ROMTag __attribute__((used)) =
 {
 	RTC_MATCHWORD,
-	(struct Resident *) &g_oROMTag,
-	(struct Resident *) (&g_oROMTag + 1),
+	(struct Resident *) &g_ROMTag,
+	(struct Resident *) (&g_ROMTag + 1),
 	RTF_AUTOINIT,
 	0,
 	NT_LIBRARY,
@@ -187,7 +187,15 @@ void StartServer()
  */
 
 struct Library *IconBase;
+#ifdef __amigaos4__
+struct Library *IntuitionBase;
+struct IconIFace *IIcon;
+struct IntuitionIFace *IIntuition;
+struct UtilityIFace *IUtility;
+#else /* ! __amigaos4__ */
 struct IntuitionBase *IntuitionBase;
+#endif /* ! __amigaos4__ */
+struct Library *UtilityBase;
 
 int main(int a_argc, const char *a_argv[])
 {
@@ -198,13 +206,19 @@ int main(int a_argc, const char *a_argv[])
 
 	signal(SIGINT, SignalHandler);
 
-#ifdef __amigaos__
-
+#ifdef __amiga__
 	// TODO: CAW - Move these
 	IconBase = OpenLibrary("icon.library", 40);
-	IntuitionBase = (struct IntuitionBase *) OpenLibrary("intuition.library", 40);
-
-#endif /* __amigaos__ */
+#ifdef __amigaos4__
+	IntuitionBase = OpenLibrary("intuition.library", 40);
+	IIcon = (struct IconIFace *) GetInterface(IconBase, "main", 1, NULL);
+	IIntuition = (struct IntuitionIFace *) GetInterface(IntuitionBase, "main", 1, NULL);
+	IUtility = (struct UtilityIFace *) GetInterface(UtilityBase, "main", 1, NULL);
+#else /* ! __amigaos4__ */
+	IntuitionBase = (struct IntuitionBase *) OpenLibrary("intuition.library", 40); // TODO: CAW - Static cast?
+#endif /* ! __amigaos4__ */
+	UtilityBase = OpenLibrary("utility.library", 40);
+#endif /* __amiga__ */
 
 	/* Parse the command line parameters passed in and make sure they are formatted correctly */
 
@@ -220,7 +234,7 @@ int main(int a_argc, const char *a_argv[])
 			{
 				if (g_socket.open(g_args[ARGS_REMOTE]) == KErrNone)
 				{
-					CCommand *command;
+					CCommand *command = nullptr;
 
 					if (g_args[ARGS_EXECUTE] != nullptr)
 					{

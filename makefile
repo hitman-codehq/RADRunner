@@ -1,14 +1,13 @@
 
-CFLAGS = -c -fno-asynchronous-unwind-tables -fno-exceptions -std=c++14 -Wall -Wextra -Wwrite-strings -DMUNGWALL_NO_LINE_TRACKING
-IFLAGS = -I../StdFuncs
+CFLAGS = -c -fno-asynchronous-unwind-tables -std=c++14 -Wall -Wextra -Wwrite-strings -DMUNGWALL_NO_LINE_TRACKING
+IFLAGS = -I../StdFuncs -D__USE_INLINE__
 LFLAGS = -L../StdFuncs/$(OBJ)
-LIBS = -lStdFuncs -lnet
+LIBS = -lStdFuncs
 
 ifdef PREFIX
 	AR = @$(PREFIX)ar
 	CC = @$(PREFIX)g++
 	LD = @$(PREFIX)g++
-	LFLAGS += -mcrt=clib2
 	STRIP = @$(PREFIX)strip
 else
 	AR = @ar
@@ -28,10 +27,17 @@ endif
 
 UNAME = $(shell uname)
 
-ifeq ($(UNAME), AmigaOS)
+ifeq ($(UNAME), CYGWIN_NT-10.0)
 
+CFLAGS += -athread=native
+LFLAGS += -athread=native
 # TODO: CAW - Fix or remove this
 #LIBS += -lauto
+
+else
+
+LFLAGS += -mcrt=clib2
+LIBS += -lnet
 
 endif
 
