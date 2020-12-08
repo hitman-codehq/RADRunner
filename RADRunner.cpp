@@ -16,8 +16,8 @@
 #endif /* ! WIN32 */
 
 #define ARGS_REMOTE 0
-#define ARGS_SEND 1
-#define ARGS_EXECUTE 2
+#define ARGS_EXECUTE 1
+#define ARGS_SEND 2
 #define ARGS_SERVER 3
 #define ARGS_SHUTDOWN 4
 #define ARGS_NUM_ARGS 5
@@ -49,7 +49,8 @@ static const char __attribute__((used)) g_stackCookie[] = "$STACK:262144";
 /* Template for use in obtaining command line parameters.  Remember to change the indexes */
 /* in Scanner.h if the ordering or number of these change */
 
-static const char g_template[] = "REMOTE/A,SEND,EXECUTE/S,SERVER/S,SHUTDOWN/S";
+// TODO: CAW - Use server mode by default
+static const char g_template[] = "REMOTE/A,EXECUTE/K,SEND/K,SERVER/S,SHUTDOWN/S";
 
 static volatile bool g_break;		/* Set to true if when ctrl-c is hit by the user */
 static RArgs g_args;				/* Contains the parsed command line arguments */
@@ -117,11 +118,11 @@ void StartServer()
 
 							if (command.m_command == EExecute)
 							{
-								ExecuteServer();
+								ExecuteServer(g_socket, &command);
 							}
 							else if (command.m_command == ESend)
 							{
-								ReceiveFile(g_socket);
+								ReceiveFile(g_socket, &command);
 							}
 							else if (command.m_command == EShutdown)
 							{

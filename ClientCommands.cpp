@@ -43,7 +43,13 @@ bool CCommand::send()
 
 void CExecute::execute()
 {
-	send();
+	int32_t payloadLength = static_cast<int32_t>(strlen(m_fileName) + 1);
+	m_command.m_length = payloadLength;
+
+	if (send())
+	{
+		m_socket.write(m_fileName, payloadLength);
+	}
 }
 
 /**
@@ -72,8 +78,13 @@ void CSend::execute()
 		return;
 	}
 
+	int32_t payloadLength = static_cast<int32_t>(strlen(m_fileName) + 1);
+	m_command.m_length = payloadLength;
+
 	if (send())
 	{
+		m_socket.write(m_fileName, payloadLength);
+
 		if ((length = m_socket.read(buffer, sizeof(buffer))) > 0) // TODO: CAW - Size
 		{
 			buffer[length] = '\0';

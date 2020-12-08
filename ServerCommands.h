@@ -4,8 +4,8 @@
 
 class RSocket;
 
-void ExecuteServer();
+void ExecuteServer(RSocket &a_socket, struct SCommand *a_command);
 
-void ReceiveFile(RSocket &a_socket);
+void ReceiveFile(RSocket &a_socket, struct SCommand *a_command);
 
 #endif /* ! SERVERCOMMANDS_H */

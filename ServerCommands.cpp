@@ -11,16 +11,6 @@
 
 #endif /* __amigaos__ */
 
-#ifdef __unix__
-
-static const char outfileName[] = "./outfile";
-
-#else /* ! __unix__ */
-
-static const char outfileName[] = "outfile.exe";
-
-#endif /* ! __unix__ */
-
 /**
  * Short description.
  * Long multi line description.
@@ -33,21 +23,24 @@ static const char outfileName[] = "outfile.exe";
  */
 
 // TODO: CAW - This name is as bad as the American girl's English (like, like) in the seat behind me
-void ExecuteServer()
+void ExecuteServer(RSocket &a_socket, struct SCommand *a_command)
 {
+	char buffer[1024]; // TODO: CAW
 	int result;
 
-	printf("execute: Executing command \"%s\"\n", outfileName);
-	result = system(outfileName);
+	a_socket.read(buffer, a_command->m_length);
+
+	printf("execute: Executing command \"%s\"\n", buffer);
+	result = system(buffer);
 
 	if ((result == -1) || (result == 127))
 	{
-		printf("Unable to launch command\n");
+		printf("execute: Unable to launch command\n");
 	}
 	else if (result != 0)
 	{
 		// TODO: CAW - Fix this for Windows
-		printf("Command failed, return code = %d\n", result); //WEXITSTATUS(result));
+		printf("execute: Command failed, return code = %d\n", result); //WEXITSTATUS(result));
 	}
 }
 
@@ -62,12 +55,17 @@ void ExecuteServer()
  * @return	Return value
  */
 
-void ReceiveFile(RSocket &a_socket)
+void ReceiveFile(RSocket &a_socket, struct SCommand *a_command)
 {
 	char buffer[1024]; // TODO: CAW
 	uint32_t fileSize;
-	std::string message;
+	std::string fileName, message;
 	FILE *file;
+
+	a_socket.read(buffer, a_command->m_length);
+
+	// Extract the filename from the payload
+	fileName = buffer;
 
 	message = "ok";
 	a_socket.write(message.c_str(), message.length());
@@ -75,9 +73,9 @@ void ReceiveFile(RSocket &a_socket)
 	a_socket.read(&fileSize, sizeof(fileSize));
 	SWAP(&fileSize);
 
-	printf("Receiving file of size %u\n", fileSize);
+	printf("send: Receiving file \"%s\" of size %u\n", fileName.c_str(), fileSize);
 
-	file = fopen(outfileName, "wb");
+	file = fopen(buffer, "wb");
 
 	if (file != nullptr)
 	{
@@ -96,18 +94,18 @@ void ReceiveFile(RSocket &a_socket)
 		}
 		while (bytesRead < static_cast<int>(fileSize)); // TODO: CAW - Handle failure
 
-		printf("ReceiveFile: Wrote %d bytes to file \"%s\"\n", bytesRead, outfileName);
+		printf("send: Wrote %d bytes to file \"%s\"\n", bytesRead, fileName.c_str());
 
 		fclose(file);
 
 #ifdef __amigaos__
 
-		Utils::setProtection(outfileName, 0);
+		Utils::setProtection(fileName.c_str(), 0);
 
 #elif defined(__unix__)
 
 		// TODO: CAW - Error checking + these need to be abstracted and passed as a part of the message
-		Utils::setProtection(outfileName, (S_IXUSR | S_IXGRP | S_IXOTH | S_IRUSR | S_IRGRP | S_IROTH | S_IWUSR));
+		Utils::setProtection(fileName.c_str, (S_IXUSR | S_IXGRP | S_IXOTH | S_IRUSR | S_IRGRP | S_IROTH | S_IWUSR));
 
 #endif /* __unix__ */
 
