@@ -67,7 +67,7 @@ void CSend::execute()
 {
 	char buffer[1024]; // TODO: CAW
 	int length;
-	long size;
+	size_t size;
 	uint32_t totalSize;
 	FILE *file;
 
@@ -102,7 +102,7 @@ void CSend::execute()
 
 				while ((size = fread(buffer, 1, sizeof(buffer), file)) > 0)
 				{
-					m_socket.write(buffer, size);
+					m_socket.write(buffer, static_cast<int>(size));
 				}
 			}
 		}

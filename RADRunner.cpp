@@ -134,7 +134,7 @@ void StartServer()
 								printf("Invalid command received: %d\n", command.m_command);
 
 								message = "invalid"; // TODO: CAW - Write these strings directly
-								g_socket.write(message.c_str(), message.length());
+								g_socket.write(message.c_str(), static_cast<int>(message.length()));
 							}
 						}
 						else

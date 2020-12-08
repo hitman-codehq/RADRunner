@@ -68,7 +68,7 @@ void ReceiveFile(RSocket &a_socket, struct SCommand *a_command)
 	fileName = buffer;
 
 	message = "ok";
-	a_socket.write(message.c_str(), message.length());
+	a_socket.write(message.c_str(), static_cast<int>(message.length()));
 
 	a_socket.read(&fileSize, sizeof(fileSize));
 	SWAP(&fileSize);
