@@ -21,7 +21,6 @@ enum TCommands
 	EShutdown
 };
 
-// TODO: CAW - Rename execute
 struct SCommand
 {
 public:
@@ -34,8 +33,8 @@ class CHandler
 {
 protected:
 
-	SCommand	m_command;	/* Basic command structure to be sent */
-	RSocket		m_socket;	/* Socket on which to send the command */
+	RSocket		*m_socket;	/* Socket on which to process the command */
+	SCommand	m_command;	/* Basic command structure to be processed */
 
 protected:
 
@@ -43,14 +42,18 @@ protected:
 
 public:
 
-	CHandler(uint32_t a_command, RSocket &a_socket) : m_socket(a_socket)
+	CHandler(RSocket *a_socket, uint32_t a_command) : m_socket(a_socket)
 	{
 		m_command.m_command = a_command;
 	}
 
+	CHandler(RSocket *a_socket, const SCommand &a_command) : m_socket(a_socket), m_command(a_command) { }
+
 	virtual ~CHandler() { }
 
 	virtual void execute() = 0;
+
+	virtual void sendRequest() = 0;
 };
 
 class CExecute : public CHandler
@@ -59,10 +62,13 @@ class CExecute : public CHandler
 
 public:
 
-	CExecute(RSocket &a_socket, const char *a_fileName) : CHandler(EExecute, a_socket),
-		m_fileName(a_fileName) { }
+	CExecute(RSocket *a_socket, const char *a_fileName) : CHandler(a_socket, EExecute), m_fileName(a_fileName) { }
+
+	CExecute(RSocket *a_socket, const SCommand &a_command) : CHandler(a_socket, a_command) { }
 
 	virtual void execute();
+
+	virtual void sendRequest();
 };
 
 class CSend : public CHandler
@@ -71,19 +77,24 @@ class CSend : public CHandler
 
 public:
 
-	CSend(RSocket &a_socket, const char *a_fileName) : CHandler(ESend, a_socket)
-		, m_fileName(a_fileName) { }
+	CSend(RSocket *a_socket, const char *a_fileName) : CHandler(a_socket, ESend), m_fileName(a_fileName) { }
+
+	CSend(RSocket *a_socket, const SCommand &a_command) : CHandler(a_socket, a_command) { }
 
 	virtual void execute();
+
+	virtual void sendRequest();
 };
 
 class CShutdown : public CHandler
 {
 public:
 
-	CShutdown(RSocket &a_socket) : CHandler(EShutdown, a_socket) { }
+	CShutdown(RSocket *a_socket) : CHandler(a_socket, EShutdown) { }
 
-	virtual void execute();
+	virtual void execute() { }
+
+	virtual void sendRequest();
 };
 
 extern const char *g_commandNames[];

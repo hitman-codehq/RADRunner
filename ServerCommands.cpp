@@ -1,7 +1,6 @@
 
 #include <StdFuncs.h>
 #include "ClientCommands.h"
-#include "ServerCommands.h"
 #include "StdSocket.h"
 #include <sys/stat.h>
 
@@ -22,13 +21,12 @@
  * @return	Return value
  */
 
-// TODO: CAW - This name is as bad as the American girl's English (like, like) in the seat behind me
-void ExecuteServer(RSocket &a_socket, struct SCommand *a_command)
+void CExecute::execute()
 {
 	char buffer[1024]; // TODO: CAW
 	int result;
 
-	a_socket.read(buffer, a_command->m_length);
+	m_socket->read(buffer, m_command.m_length);
 
 	printf("execute: Executing command \"%s\"\n", buffer);
 	result = system(buffer);
@@ -55,22 +53,22 @@ void ExecuteServer(RSocket &a_socket, struct SCommand *a_command)
  * @return	Return value
  */
 
-void ReceiveFile(RSocket &a_socket, struct SCommand *a_command)
+void CSend::execute()
 {
 	char buffer[1024]; // TODO: CAW
 	uint32_t fileSize;
 	std::string fileName, message;
 	FILE *file;
 
-	a_socket.read(buffer, a_command->m_length);
+	m_socket->read(buffer, m_command.m_length);
 
 	// Extract the filename from the payload
 	fileName = buffer;
 
 	message = "ok";
-	a_socket.write(message.c_str(), static_cast<int>(message.length()));
+	m_socket->write(message.c_str(), static_cast<int>(message.length()));
 
-	a_socket.read(&fileSize, sizeof(fileSize));
+	m_socket->read(&fileSize, sizeof(fileSize));
 	SWAP(&fileSize);
 
 	printf("send: Receiving file \"%s\" of size %u\n", fileName.c_str(), fileSize);
@@ -84,7 +82,7 @@ void ReceiveFile(RSocket &a_socket, struct SCommand *a_command)
 		do
 		{
 			bytesToRead = ((fileSize - bytesRead) >= sizeof(buffer)) ? sizeof(buffer) : (fileSize - bytesRead);
-			size = a_socket.read(buffer, bytesToRead); // TODO: CAW - Error checking all through here
+			size = m_socket->read(buffer, bytesToRead); // TODO: CAW - Error checking all through here
 
 			if (size > 0)
 			{

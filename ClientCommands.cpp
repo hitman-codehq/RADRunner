@@ -27,7 +27,7 @@ bool CHandler::send()
 	SWAP(&m_command.m_command);
 	SWAP(&m_command.m_length);
 
-	return (m_socket.write(&m_command, sizeof(m_command)) == sizeof(m_command));
+	return (m_socket->write(&m_command, sizeof(m_command)) == sizeof(m_command));
 }
 
 /**
@@ -41,14 +41,14 @@ bool CHandler::send()
  * @return	Return value
  */
 
-void CExecute::execute()
+void CExecute::sendRequest()
 {
 	int32_t payloadLength = static_cast<int32_t>(strlen(m_fileName) + 1);
 	m_command.m_length = payloadLength;
 
 	if (send())
 	{
-		m_socket.write(m_fileName, payloadLength);
+		m_socket->write(m_fileName, payloadLength);
 	}
 }
 
@@ -63,7 +63,7 @@ void CExecute::execute()
  * @return	Return value
  */
 
-void CSend::execute()
+void CSend::sendRequest()
 {
 	char buffer[1024]; // TODO: CAW
 	int length;
@@ -83,9 +83,9 @@ void CSend::execute()
 
 	if (send())
 	{
-		m_socket.write(m_fileName, payloadLength);
+		m_socket->write(m_fileName, payloadLength);
 
-		if ((length = m_socket.read(buffer, sizeof(buffer))) > 0) // TODO: CAW - Size
+		if ((length = m_socket->read(buffer, sizeof(buffer))) > 0) // TODO: CAW - Size
 		{
 			buffer[length] = '\0';
 
@@ -98,11 +98,11 @@ void CSend::execute()
 
 				SWAP(&totalSize);
 				// TODO: CAW - Check return value here and elsewhere
-				m_socket.write(&totalSize, sizeof(totalSize));
+				m_socket->write(&totalSize, sizeof(totalSize));
 
 				while ((size = fread(buffer, 1, sizeof(buffer), file)) > 0)
 				{
-					m_socket.write(buffer, static_cast<int>(size));
+					m_socket->write(buffer, static_cast<int>(size));
 				}
 			}
 		}
@@ -122,7 +122,7 @@ void CSend::execute()
  * @return	Return value
  */
 
-void CShutdown::execute()
+void CShutdown::sendRequest()
 {
 	send();
 }

@@ -6,7 +6,6 @@
 #include <string.h>
 #include "ClientCommands.h"
 #include "DirWrapper.h"
-#include "ServerCommands.h"
 #include "StdSocket.h"
 
 #ifndef WIN32
@@ -116,13 +115,15 @@ void StartServer()
 
 							printf("Received request \"%s\"\n", g_commandNames[command.m_command]);
 
+							CHandler *handler = nullptr;
+
 							if (command.m_command == EExecute)
 							{
-								ExecuteServer(g_socket, &command);
+								handler = new CExecute(&g_socket, command);
 							}
 							else if (command.m_command == ESend)
 							{
-								ReceiveFile(g_socket, &command);
+								handler = new CSend(&g_socket, command);
 							}
 							else if (command.m_command == EShutdown)
 							{
@@ -135,6 +136,12 @@ void StartServer()
 
 								message = "invalid"; // TODO: CAW - Write these strings directly
 								g_socket.write(message.c_str(), static_cast<int>(message.length()));
+							}
+
+							if (handler != nullptr)
+							{
+								handler->execute();
+								delete handler;
 							}
 						}
 						else
@@ -239,22 +246,22 @@ int main(int a_argc, const char *a_argv[])
 
 					if (g_args[ARGS_EXECUTE] != nullptr)
 					{
-						handler = new CExecute(g_socket, g_args[ARGS_EXECUTE]);
+						handler = new CExecute(&g_socket, g_args[ARGS_EXECUTE]);
 					}
 
 					if (g_args[ARGS_SEND] != nullptr)
 					{
-						handler = new CSend(g_socket, g_args[ARGS_SEND]);
+						handler = new CSend(&g_socket, g_args[ARGS_SEND]);
 					}
 
 					if (g_args[ARGS_SHUTDOWN] != nullptr)
 					{
-						handler = new CShutdown(g_socket);
+						handler = new CShutdown(&g_socket);
 					}
 
 					if (handler != nullptr)
 					{
-						handler->execute();
+						handler->sendRequest();
 						delete handler;
 					}
 
@@ -269,7 +276,6 @@ int main(int a_argc, const char *a_argv[])
 			{
 				Utils::Error("REMOTE argument must be specified");
 			}
-
 		}
 
 		g_args.close();
