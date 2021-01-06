@@ -22,7 +22,7 @@ const char *g_commandNames[] =
  * @return	Return value
  */
 
-bool CCommand::send()
+bool CHandler::send()
 {
 	SWAP(&m_command.m_command);
 	SWAP(&m_command.m_length);

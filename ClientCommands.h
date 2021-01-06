@@ -21,7 +21,7 @@ enum TCommands
 	EShutdown
 };
 
-// TODO: CAW - Rename command and execute
+// TODO: CAW - Rename execute
 struct SCommand
 {
 public:
@@ -30,7 +30,7 @@ public:
 	uint32_t	m_length;	/* Length of payload after structure */
 };
 
-class CCommand
+class CHandler
 {
 protected:
 
@@ -39,49 +39,49 @@ protected:
 
 protected:
 
-	bool send(); // TODO: CAW - Rename
+	bool send();
 
 public:
 
-	CCommand(uint32_t a_command, RSocket &a_socket) : m_socket(a_socket)
+	CHandler(uint32_t a_command, RSocket &a_socket) : m_socket(a_socket)
 	{
 		m_command.m_command = a_command;
 	}
 
-	virtual ~CCommand() { }
+	virtual ~CHandler() { }
 
 	virtual void execute() = 0;
 };
 
-class CExecute : public CCommand
+class CExecute : public CHandler
 {
 	const char	*m_fileName;	/* The name of the file to be executed */
 
 public:
 
-	CExecute(RSocket &a_socket, const char *a_fileName) : CCommand(EExecute, a_socket),
+	CExecute(RSocket &a_socket, const char *a_fileName) : CHandler(EExecute, a_socket),
 		m_fileName(a_fileName) { }
 
 	virtual void execute();
 };
 
-class CSend : public CCommand
+class CSend : public CHandler
 {
 	const char	*m_fileName;	/* The name of the file to be sent */
 
 public:
 
-	CSend(RSocket &a_socket, const char *a_fileName) : CCommand(ESend, a_socket)
+	CSend(RSocket &a_socket, const char *a_fileName) : CHandler(ESend, a_socket)
 		, m_fileName(a_fileName) { }
 
 	virtual void execute();
 };
 
-class CShutdown : public CCommand
+class CShutdown : public CHandler
 {
 public:
 
-	CShutdown(RSocket &a_socket) : CCommand(EShutdown, a_socket) { }
+	CShutdown(RSocket &a_socket) : CHandler(EShutdown, a_socket) { }
 
 	virtual void execute();
 };

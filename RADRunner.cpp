@@ -235,27 +235,27 @@ int main(int a_argc, const char *a_argv[])
 			{
 				if (g_socket.open(g_args[ARGS_REMOTE]) == KErrNone)
 				{
-					CCommand *command = nullptr;
+					CHandler *handler = nullptr;
 
 					if (g_args[ARGS_EXECUTE] != nullptr)
 					{
-						command = new CExecute(g_socket, g_args[ARGS_EXECUTE]);
+						handler = new CExecute(g_socket, g_args[ARGS_EXECUTE]);
 					}
 
 					if (g_args[ARGS_SEND] != nullptr)
 					{
-						command = new CSend(g_socket, g_args[ARGS_SEND]);
+						handler = new CSend(g_socket, g_args[ARGS_SEND]);
 					}
 
 					if (g_args[ARGS_SHUTDOWN] != nullptr)
 					{
-						command = new CShutdown(g_socket);
+						handler = new CShutdown(g_socket);
 					}
 
-					if (command != nullptr)
+					if (handler != nullptr)
 					{
-						command->execute();
-						delete command;
+						handler->execute();
+						delete handler;
 					}
 
 					g_socket.close();
