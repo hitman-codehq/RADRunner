@@ -2,7 +2,6 @@
 #include <StdFuncs.h>
 #include <Args.h>
 #include <signal.h>
-#include <stdio.h>
 #include <string.h>
 #include "ClientCommands.h"
 #include "DirWrapper.h"

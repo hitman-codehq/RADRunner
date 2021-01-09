@@ -1,5 +1,6 @@
 
 #include <StdFuncs.h>
+#include <File.h>
 #include "ClientCommands.h"
 #include "StdSocket.h"
 #include <sys/stat.h>
@@ -58,7 +59,7 @@ void CSend::execute()
 	char buffer[1024]; // TODO: CAW
 	uint32_t fileSize;
 	std::string fileName, message;
-	FILE *file;
+	RFile file;
 
 	m_socket->read(buffer, m_command.m_length);
 
@@ -73,9 +74,16 @@ void CSend::execute()
 
 	printf("send: Receiving file \"%s\" of size %u\n", fileName.c_str(), fileSize);
 
-	file = fopen(buffer, "wb");
+	// The Framework doesn't truncate a file if it already exists, so we have to try and create it first and
+	// if it already exists, then open it normally
+	int result = file.Create(buffer, EFileWrite);
 
-	if (file != nullptr)
+	if (result == KErrAlreadyExists)
+	{
+		result = file.open(buffer, EFileWrite);
+	}
+
+	if (result == KErrNone)
 	{
 		int bytesRead = 0, bytesToRead, size;
 
@@ -86,7 +94,7 @@ void CSend::execute()
 
 			if (size > 0)
 			{
-				fwrite(buffer, 1, size, file);
+				file.write(reinterpret_cast<unsigned char *>(buffer), size);
 				bytesRead += size;
 			}
 		}
@@ -94,7 +102,7 @@ void CSend::execute()
 
 		printf("send: Wrote %d bytes to file \"%s\"\n", bytesRead, fileName.c_str());
 
-		fclose(file);
+		file.close();
 
 #ifdef __amigaos__
 

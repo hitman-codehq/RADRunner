@@ -1,5 +1,6 @@
 
 #include <StdFuncs.h>
+#include <File.h>
 #include <string.h>
 #include "ClientCommands.h"
 #include "StdSocket.h"
@@ -69,9 +70,9 @@ void CSend::sendRequest()
 	int length;
 	size_t size;
 	uint32_t totalSize;
-	FILE *file;
+	RFile file;
 
-	if ((file = fopen(m_fileName, "rb")) == nullptr)
+	if ((file.open(m_fileName, EFileRead)) != KErrNone)
 	{
 		Utils::Error("Unable to open file \"%s\"", m_fileName);
 
@@ -85,30 +86,31 @@ void CSend::sendRequest()
 	{
 		m_socket->write(m_fileName, payloadLength);
 
-		if ((length = m_socket->read(buffer, sizeof(buffer))) > 0) // TODO: CAW - Size
+		if ((length = m_socket->read(buffer, (sizeof(buffer) - 1))) > 0)
 		{
 			buffer[length] = '\0';
 
 			if (strcmp(buffer, "ok") == 0)
 			{
-				// TODO: CAW - Use StdFuncs function for this?
-				fseek(file, 0, SEEK_END);
-				totalSize = ftell(file);
-				fseek(file, 0, SEEK_SET);
+				TEntry entry;
 
-				SWAP(&totalSize);
-				// TODO: CAW - Check return value here and elsewhere
-				m_socket->write(&totalSize, sizeof(totalSize));
-
-				while ((size = fread(buffer, 1, sizeof(buffer), file)) > 0)
+				if (Utils::GetFileInfo(m_fileName, &entry) == KErrNone)
 				{
-					m_socket->write(buffer, static_cast<int>(size));
+					totalSize = entry.iSize;
+
+					SWAP(&totalSize);
+					m_socket->write(&totalSize, sizeof(totalSize));
+
+					while ((size = file.read(reinterpret_cast<unsigned char *>(buffer), sizeof(buffer))) > 0)
+					{
+						m_socket->write(buffer, static_cast<int>(size));
+					}
 				}
 			}
 		}
 	}
 
-	fclose(file);
+	file.close();
 }
 
 /**
