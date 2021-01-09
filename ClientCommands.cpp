@@ -79,12 +79,17 @@ void CSend::sendRequest()
 		return;
 	}
 
-	int32_t payloadLength = static_cast<int32_t>(strlen(m_fileName) + 1);
+	// Strip any path component from the file as we want it to be written to the current directory
+	// in the destination
+	const char *fileName = Utils::filePart(m_fileName);
+
+	// Send the length of just the filename as the payload length
+	int32_t payloadLength = static_cast<int32_t>(strlen(fileName) + 1);
 	m_command.m_length = payloadLength;
 
 	if (send())
 	{
-		m_socket->write(m_fileName, payloadLength);
+		m_socket->write(fileName, payloadLength);
 
 		if ((length = m_socket->read(buffer, (sizeof(buffer) - 1))) > 0)
 		{
