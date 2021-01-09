@@ -47,8 +47,7 @@ static const char __attribute__((used)) g_stackCookie[] = "$STACK:262144";
 /* Template for use in obtaining command line parameters.  Remember to change the indexes */
 /* in Scanner.h if the ordering or number of these change */
 
-// TODO: CAW - Use server mode by default
-static const char g_template[] = "REMOTE/A,EXECUTE/K,SEND/K,SERVER/S,SHUTDOWN/S";
+static const char g_template[] = "REMOTE,EXECUTE/K,SEND/K,SERVER/S,SHUTDOWN/S";
 
 static volatile bool g_break;		/* Set to true if when ctrl-c is hit by the user */
 static RArgs g_args;				/* Contains the parsed command line arguments */
