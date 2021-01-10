@@ -40,6 +40,8 @@ public:
 	int read(void *a_pvBuffer, int a_iSize);
 
 	int write(const void *a_pcvBuffer, int a_iSize);
+
+	int write(const char *a_pccBuffer);
 };
 
 #endif /* ! STDSOCKET_H */

@@ -56,7 +56,6 @@ void CExecute::execute()
 void CSend::execute()
 {
 	uint32_t fileSize;
-	std::string message;
 	RFile file;
 
 	readPayload();
@@ -64,8 +63,7 @@ void CSend::execute()
 	// Extract the filename from the payload
 	char *fileName = reinterpret_cast<char *>(m_payload);
 
-	message = "ok";
-	m_socket->write(message.c_str(), static_cast<int>(message.length()));
+	m_socket->write("ok");
 
 	m_socket->read(&fileSize, sizeof(fileSize));
 	SWAP(&fileSize);

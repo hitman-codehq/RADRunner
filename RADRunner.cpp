@@ -80,7 +80,6 @@ void StartServer()
 	int length, result, selectResult;
 	struct SCommand command;
 	fd_set socketSet;
-	std::string message;
 
 	printf("Starting RADRunner server\n");
 
@@ -131,9 +130,7 @@ void StartServer()
 							else
 							{
 								printf("Invalid command received: %d\n", command.m_command);
-
-								message = "invalid"; // TODO: CAW - Write these strings directly
-								g_socket.write(message.c_str(), static_cast<int>(message.length()));
+								g_socket.write("invalid");
 							}
 
 							if (handler != nullptr)
@@ -221,7 +218,7 @@ int main(int a_argc, const char *a_argv[])
 	IIntuition = (struct IntuitionIFace *) GetInterface(IntuitionBase, "main", 1, NULL);
 	IUtility = (struct UtilityIFace *) GetInterface(UtilityBase, "main", 1, NULL);
 #else /* ! __amigaos4__ */
-	IntuitionBase = (struct IntuitionBase *) OpenLibrary("intuition.library", 40); // TODO: CAW - Static cast?
+	IntuitionBase = (struct IntuitionBase *) OpenLibrary("intuition.library", 40);
 #endif /* ! __amigaos4__ */
 	UtilityBase = OpenLibrary("utility.library", 40);
 #endif /* __amiga__ */

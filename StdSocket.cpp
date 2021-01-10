@@ -213,3 +213,18 @@ int RSocket::write(const void *a_pcvBuffer, int a_iSize)
 {
 	return(send(m_iSocket, (char *) a_pcvBuffer, a_iSize, 0));
 }
+
+/**
+ * Writes a string to the socket.
+ * A convenience method that writes a NULL terminated string to the socket, including the NULL
+ * terminator itself.
+ *
+ * @date	Saturday 11-Feb-2017 5:55 pm, Code HQ Habersaathstrasse
+ * @param	a_pccBuffer		A pointer to the NULL terminated string to be written
+ * @return	The number of bytes written to the socket
+ */
+
+int RSocket::write(const char *a_pccBuffer)
+{
+	return(write((const void *) a_pccBuffer, (int) (strlen(a_pccBuffer) + 1)));
+}
