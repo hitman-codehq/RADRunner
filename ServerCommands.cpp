@@ -24,13 +24,12 @@
 
 void CExecute::execute()
 {
-	char buffer[1024]; // TODO: CAW
 	int result;
 
-	m_socket->read(buffer, m_command.m_length);
+	readPayload();
 
-	printf("execute: Executing command \"%s\"\n", buffer);
-	result = system(buffer);
+	printf("execute: Executing command \"%s\"\n", m_payload);
+	result = system(reinterpret_cast<const char *>(m_payload));
 
 	if ((result == -1) || (result == 127))
 	{
@@ -56,15 +55,14 @@ void CExecute::execute()
 
 void CSend::execute()
 {
-	char buffer[1024]; // TODO: CAW
 	uint32_t fileSize;
-	std::string fileName, message;
+	std::string message;
 	RFile file;
 
-	m_socket->read(buffer, m_command.m_length);
+	readPayload();
 
 	// Extract the filename from the payload
-	fileName = buffer;
+	char *fileName = reinterpret_cast<char *>(m_payload);
 
 	message = "ok";
 	m_socket->write(message.c_str(), static_cast<int>(message.length()));
@@ -72,20 +70,21 @@ void CSend::execute()
 	m_socket->read(&fileSize, sizeof(fileSize));
 	SWAP(&fileSize);
 
-	printf("send: Receiving file \"%s\" of size %u\n", fileName.c_str(), fileSize);
+	printf("send: Receiving file \"%s\" of size %u\n", fileName, fileSize);
 
 	// The Framework doesn't truncate a file if it already exists, so we have to try and create it first and
 	// if it already exists, then open it normally
-	int result = file.Create(buffer, EFileWrite);
+	int result = file.Create(fileName, EFileWrite);
 
 	if (result == KErrAlreadyExists)
 	{
-		result = file.open(buffer, EFileWrite);
+		result = file.open(fileName, EFileWrite);
 	}
 
 	if (result == KErrNone)
 	{
 		int bytesRead = 0, bytesToRead, size;
+		unsigned char buffer[1024]; // TODO: CAW
 
 		do
 		{
@@ -100,18 +99,18 @@ void CSend::execute()
 		}
 		while (bytesRead < static_cast<int>(fileSize)); // TODO: CAW - Handle failure
 
-		printf("send: Wrote %d bytes to file \"%s\"\n", bytesRead, fileName.c_str());
+		printf("send: Wrote %d bytes to file \"%s\"\n", bytesRead, fileName);
 
 		file.close();
 
 #ifdef __amigaos__
 
-		Utils::setProtection(fileName.c_str(), 0);
+		Utils::setProtection(fileName, 0);
 
 #elif defined(__unix__)
 
 		// TODO: CAW - Error checking + these need to be abstracted and passed as a part of the message
-		Utils::setProtection(fileName.c_str, (S_IXUSR | S_IXGRP | S_IXOTH | S_IRUSR | S_IRGRP | S_IROTH | S_IWUSR));
+		Utils::setProtection(fileName, (S_IXUSR | S_IXGRP | S_IXOTH | S_IRUSR | S_IRGRP | S_IROTH | S_IWUSR));
 
 #endif /* __unix__ */
 

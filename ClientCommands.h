@@ -33,12 +33,15 @@ class CHandler
 {
 protected:
 
-	RSocket		*m_socket;	/* Socket on which to process the command */
-	SCommand	m_command;	/* Basic command structure to be processed */
+	RSocket			*m_socket;	/* Socket on which to process the command */
+	SCommand		m_command;	/* Basic command structure to be processed */
+	unsigned char	*m_payload;	/* Buffer containing packet's payload, if any */
 
 protected:
 
-	bool send();
+	bool readPayload();
+
+	bool sendCommand();
 
 public:
 
@@ -49,7 +52,10 @@ public:
 
 	CHandler(RSocket *a_socket, const SCommand &a_command) : m_socket(a_socket), m_command(a_command) { }
 
-	virtual ~CHandler() { }
+	virtual ~CHandler()
+	{
+		delete [] m_payload;
+	}
 
 	virtual void execute() = 0;
 

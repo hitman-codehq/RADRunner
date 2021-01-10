@@ -148,6 +148,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ClientCommands.cpp" />
+    <ClCompile Include="Handler.cpp" />
     <ClCompile Include="RADRunner.cpp" />
     <ClCompile Include="ServerCommands.cpp" />
     <ClCompile Include="StdSocket.cpp" />

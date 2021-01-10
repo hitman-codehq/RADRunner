@@ -18,25 +18,6 @@ const char *g_commandNames[] =
  *
  * @pre		Some precondition here
  *
- * @date	Sunday 29-Nov-2020 12:17 pm, Code HQ Bergmannstrasse
- * @param	Parameter		Description
- * @return	Return value
- */
-
-bool CHandler::send()
-{
-	SWAP(&m_command.m_command);
-	SWAP(&m_command.m_length);
-
-	return (m_socket->write(&m_command, sizeof(m_command)) == sizeof(m_command));
-}
-
-/**
- * Short description.
- * Long multi line description.
- *
- * @pre		Some precondition here
- *
  * @date	Wednesday 29-Jan-2020 2:13 pm, Scoot flight TR 735 to Singapore
  * @param	Parameter		Description
  * @return	Return value
@@ -47,7 +28,7 @@ void CExecute::sendRequest()
 	int32_t payloadLength = static_cast<int32_t>(strlen(m_fileName) + 1);
 	m_command.m_length = payloadLength;
 
-	if (send())
+	if (sendCommand())
 	{
 		m_socket->write(m_fileName, payloadLength);
 	}
@@ -87,7 +68,7 @@ void CSend::sendRequest()
 	int32_t payloadLength = static_cast<int32_t>(strlen(fileName) + 1);
 	m_command.m_length = payloadLength;
 
-	if (send())
+	if (sendCommand())
 	{
 		m_socket->write(fileName, payloadLength);
 
@@ -131,5 +112,5 @@ void CSend::sendRequest()
 
 void CShutdown::sendRequest()
 {
-	send();
+	sendCommand();
 }
