@@ -1,6 +1,8 @@
 
 #include <StdFuncs.h>
 #include <Args.h>
+#include <Lex.h>
+#include <StdTextFile.h>
 #include <signal.h>
 #include <string.h>
 #include "ClientCommands.h"
@@ -15,10 +17,11 @@
 
 #define ARGS_REMOTE 0
 #define ARGS_EXECUTE 1
-#define ARGS_SEND 2
-#define ARGS_SERVER 3
-#define ARGS_SHUTDOWN 4
-#define ARGS_NUM_ARGS 5
+#define ARGS_SCRIPT 2
+#define ARGS_SEND 3
+#define ARGS_SERVER 4
+#define ARGS_SHUTDOWN 5
+#define ARGS_NUM_ARGS 6
 
 #ifdef __amigaos4__
 
@@ -47,7 +50,7 @@ static const char __attribute__((used)) g_stackCookie[] = "$STACK:262144";
 /* Template for use in obtaining command line parameters.  Remember to change the indexes */
 /* in Scanner.h if the ordering or number of these change */
 
-static const char g_template[] = "REMOTE,EXECUTE/K,SEND/K,SERVER/S,SHUTDOWN/S";
+static const char g_template[] = "REMOTE,EXECUTE/K,SCRIPT/K,SEND/K,SERVER/S,SHUTDOWN/S";
 
 static volatile bool g_break;		/* Set to true if when ctrl-c is hit by the user */
 static RArgs g_args;				/* Contains the parsed command line arguments */
@@ -62,6 +65,90 @@ static void SignalHandler(int /*a_signal*/)
 }
 
 static RSocket g_socket;
+
+/**
+ * Processes the given script file and executes its contents.
+ * Reads the script file passed in one line at a time and executes each command found.  Lines starting
+ * with a # character are considered to be comments and are skipped.
+ *
+ * @date	Sunday 10-Jan-2021 8:11 am, Code HQ Bergmannstrasse
+ * @param	a_scriptName	Fully qualified path to the script to be parsed
+ */
+
+void ProcessScript(const char *a_scriptName)
+{
+	RTextFile script;
+
+	printf("Parsing script \"%s\"...\n", a_scriptName);
+
+	if (script.open(a_scriptName) == KErrNone)
+	{
+		const char *line;
+
+		// Iterate through the script, reading each line and parsing it
+		while ((line = script.GetLine()) != nullptr)
+		{
+			int length;
+			TLex tokens(line, static_cast<int>(strlen(line)));
+
+			const char *commandToken;
+
+			// Extract the first token on the line
+			if ((commandToken = tokens.NextToken(&length)) != nullptr)
+			{
+				CHandler *handler = nullptr;
+				std::string command(commandToken, length);
+
+				const char *argumentToken = tokens.NextToken(&length);
+
+				// If it is a comment character then ignore it and continue to the next line
+				if (command == "#")
+				{
+					continue;
+				}
+				else if (command == "execute")
+				{
+					if (argumentToken != nullptr)
+					{
+						handler = new CExecute(&g_socket, argumentToken);
+					}
+					else
+					{
+						Utils::Error("No value was specified for the argument \"execute\"");
+					}
+				}
+				else if (command == "send")
+				{
+					if (argumentToken != nullptr)
+					{
+						handler = new CSend(&g_socket, argumentToken);
+					}
+					else
+					{
+						Utils::Error("No value was specified for the argument \"send\"");
+					}
+				}
+				else if (command == "shutdown")
+				{
+					handler = new CShutdown(&g_socket);
+				}
+
+				if (handler != nullptr)
+				{
+					printf("Sending request \"%s\"\n", command.c_str());
+					handler->sendRequest();
+					delete handler;
+				}
+			}
+		}
+
+		script.close();
+	}
+	else
+	{
+		Utils::Error("Unable to open script file \"%s\" for parsing", a_scriptName);
+	}
+}
 
 /**
  * Short description.
@@ -237,27 +324,34 @@ int main(int a_argc, const char *a_argv[])
 			{
 				if (g_socket.open(g_args[ARGS_REMOTE]) == KErrNone)
 				{
-					CHandler *handler = nullptr;
-
-					if (g_args[ARGS_EXECUTE] != nullptr)
+					if (g_args[ARGS_SCRIPT] != nullptr)
 					{
-						handler = new CExecute(&g_socket, g_args[ARGS_EXECUTE]);
+						ProcessScript(g_args[ARGS_SCRIPT]);
 					}
-
-					if (g_args[ARGS_SEND] != nullptr)
+					else
 					{
-						handler = new CSend(&g_socket, g_args[ARGS_SEND]);
-					}
+						CHandler *handler = nullptr;
 
-					if (g_args[ARGS_SHUTDOWN] != nullptr)
-					{
-						handler = new CShutdown(&g_socket);
-					}
+						if (g_args[ARGS_EXECUTE] != nullptr)
+						{
+							handler = new CExecute(&g_socket, g_args[ARGS_EXECUTE]);
+						}
 
-					if (handler != nullptr)
-					{
-						handler->sendRequest();
-						delete handler;
+						if (g_args[ARGS_SEND] != nullptr)
+						{
+							handler = new CSend(&g_socket, g_args[ARGS_SEND]);
+						}
+
+						if (g_args[ARGS_SHUTDOWN] != nullptr)
+						{
+							handler = new CShutdown(&g_socket);
+						}
+
+						if (handler != nullptr)
+						{
+							handler->sendRequest();
+							delete handler;
+						}
 					}
 
 					g_socket.close();
