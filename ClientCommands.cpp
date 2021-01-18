@@ -47,18 +47,18 @@ void CExecute::sendRequest()
 
 void CSend::sendRequest()
 {
-	char buffer[1024]; // TODO: CAW
-	int length;
-	size_t size;
-	uint32_t totalSize;
 	RFile file;
 
-	if ((file.open(m_fileName, EFileRead)) != KErrNone)
+	printf("%s: Sending file \"%s\"\n", g_commandNames[m_command.m_command], m_fileName);
+
+	if (file.open(m_fileName, EFileRead) != KErrNone)
 	{
 		Utils::Error("Unable to open file \"%s\"", m_fileName);
 
 		return;
 	}
+
+	file.close();
 
 	// Strip any path component from the file as we want it to be written to the current directory
 	// in the destination
@@ -70,30 +70,18 @@ void CSend::sendRequest()
 
 	if (sendCommand())
 	{
-		m_socket->write(fileName, payloadLength);
-
-		if ((length = m_socket->read(buffer, (sizeof(buffer) - 1))) > 0)
+		if (m_socket->write(fileName, payloadLength) == payloadLength)
 		{
-			buffer[length] = '\0';
-
-			if (strcmp(buffer, "ok") == 0)
-			{
-				TEntry entry;
-
-				if (Utils::GetFileInfo(m_fileName, &entry) == KErrNone)
-				{
-					totalSize = entry.iSize;
-
-					SWAP(&totalSize);
-					m_socket->write(&totalSize, sizeof(totalSize));
-
-					while ((size = file.read(reinterpret_cast<unsigned char *>(buffer), sizeof(buffer))) > 0)
-					{
-						m_socket->write(buffer, static_cast<int>(size));
-					}
-				}
-			}
+			sendFile(m_fileName);
 		}
+		else
+		{
+			Utils::Error("Unable to send payload");
+		}
+	}
+	else
+	{
+		Utils::Error("Unable to send request");
 	}
 
 	file.close();

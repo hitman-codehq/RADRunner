@@ -1,7 +1,67 @@
 
 #include <StdFuncs.h>
+#include <File.h>
 #include "ClientCommands.h"
 #include "StdSocket.h"
+
+/**
+ * Reads a file from a connected socket.
+ * A convenience method used to read a file from a socket and to write its contents to a local file in
+ * the file system.  This method assumes that the file has been requested and that upon reading the socket,
+ * the entire file will be able to be read.
+ *
+ * @pre		A file has been requested from the connected endpoint
+ *
+ * @date	Sunday 17-Jan-2021 5:39 am, Code HQ Bergmannstrasse
+ * @param	a_fileName		The name of the local file into which to write the file's contents
+ * @param	a_fileSize		The size of the file in bytes
+ * @return	KErrNone if successful, else one of the system errors
+ */
+
+int CHandler::readFile(const char *a_fileName, uint32_t a_fileSize)
+{
+	RFile file;
+
+	printf("%s: Transferring file \"%s\" of size %u\n", g_commandNames[m_command.m_command], a_fileName, a_fileSize);
+
+	// The Framework doesn't truncate a file if it already exists, so we have to try and create it first and
+	// if it already exists, then open it normally
+	int retVal = file.Create(a_fileName, EFileWrite);
+
+	if (retVal == KErrAlreadyExists)
+	{
+		retVal = file.open(a_fileName, EFileWrite);
+	}
+
+	if (retVal == KErrNone)
+	{
+		int bytesRead = 0, bytesToRead, size;
+		unsigned char buffer[1024]; // TODO: CAW
+
+		do
+		{
+			bytesToRead = ((a_fileSize - bytesRead) >= sizeof(buffer)) ? sizeof(buffer) : (a_fileSize - bytesRead);
+			size = m_socket->read(buffer, bytesToRead);
+
+			if (size > 0)
+			{
+				file.write(reinterpret_cast<unsigned char *>(buffer), size);
+				bytesRead += size;
+			}
+		}
+		while (bytesRead < static_cast<int>(a_fileSize));
+
+		printf("%s: Wrote %d bytes to file \"%s\"\n", g_commandNames[m_command.m_command], bytesRead, a_fileName);
+
+		file.close();
+	}
+	else
+	{
+		Utils::Error("Unable to open file \"%s\" for writing", a_fileName);
+	}
+
+	return retVal;
+}
 
 /**
  * Reads the command's payload.
@@ -36,8 +96,67 @@ bool CHandler::readPayload()
 
 bool CHandler::sendCommand()
 {
-	SWAP(&m_command.m_command);
-	SWAP(&m_command.m_length);
+	SCommand command = m_command;
 
-	return (m_socket->write(&m_command, sizeof(m_command)) == sizeof(m_command));
+	SWAP(&command.m_command);
+	SWAP(&command.m_length);
+
+	return (m_socket->write(&command, sizeof(command)) == sizeof(command));
+}
+
+/**
+ * Writes a file to a connected socket.
+ * A convenience method used to read a file and to write its contents to a connected socket.  This method
+ * assumes that the remote endpoint is expecting the file.
+ *
+ * @pre		The connected endpoint has requested a file
+ *
+ * @date	Sunday 17-Jan-2021 5:50 am, Code HQ Bergmannstrasse
+ * @param	a_fileName		The name of the local file from which to read the file's contents
+ * @return	KErrNone if successful, else one of the system errors
+ */
+
+int CHandler::sendFile(const char *a_fileName)
+{
+	unsigned char buffer[1024]; // TODO: CAW
+	int retVal, totalSize;
+	size_t size;
+	TEntry entry;
+
+	printf("%s: Transferring file \"%s\"\n", g_commandNames[m_command.m_command], a_fileName);
+
+	if ((retVal = Utils::GetFileInfo(a_fileName, &entry)) == KErrNone)
+	{
+		totalSize = entry.iSize;
+		SWAP(reinterpret_cast<unsigned int *>(&totalSize));
+
+		if (m_socket->write(&totalSize, sizeof(totalSize)) == sizeof(totalSize))
+		{
+			RFile file;
+
+			if ((retVal = file.open(a_fileName, EFileRead)) == KErrNone)
+			{
+				while ((size = file.read(buffer, sizeof(buffer))) > 0)
+				{
+					m_socket->write(buffer, static_cast<int>(size));
+				}
+
+				file.close();
+			}
+			else
+			{
+				Utils::Error("Unable to open file \"%s\" for reading", a_fileName);
+			}
+		}
+		else
+		{
+			Utils::Error("Unable to write file size");
+		}
+	}
+	else
+	{
+		Utils::Error("Unable to query file \"%s\"", a_fileName);
+	}
+
+	return retVal;
 }

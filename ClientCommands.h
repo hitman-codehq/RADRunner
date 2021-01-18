@@ -39,9 +39,13 @@ protected:
 
 protected:
 
+	int readFile(const char *a_fileName, uint32_t a_fileSize);
+
 	bool readPayload();
 
 	bool sendCommand();
+
+	int sendFile(const char *a_fileName);
 
 public:
 
