@@ -17,6 +17,7 @@
 enum TCommands
 {
 	EExecute,
+	EGet,
 	ESend,
 	EShutdown
 };
@@ -75,6 +76,21 @@ public:
 	CExecute(RSocket *a_socket, const char *a_fileName) : CHandler(a_socket, EExecute), m_fileName(a_fileName) { }
 
 	CExecute(RSocket *a_socket, const SCommand &a_command) : CHandler(a_socket, a_command) { }
+
+	virtual void execute();
+
+	virtual void sendRequest();
+};
+
+class CGet : public CHandler
+{
+	const char	*m_fileName;	/* The name of the file to be fetched */
+
+public:
+
+	CGet(RSocket *a_socket, const char *a_fileName) : CHandler(a_socket, EGet), m_fileName(a_fileName) { }
+
+	CGet(RSocket *a_socket, const SCommand &a_command) : CHandler(a_socket, a_command) { }
 
 	virtual void execute();
 

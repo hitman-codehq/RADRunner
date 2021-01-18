@@ -43,6 +43,35 @@ void CExecute::execute()
 }
 
 /**
+ * Sends a file to the remote client.
+ * Transfers a file, if it exists, to the remote client.  If the file does not exist then an error will be
+ * sent instead, to indicate this.
+ *
+ * @date	Saturday 16-Jan-2021 11:54 am, Code HQ Bergmannstrasse
+ */
+
+void CGet::execute()
+{
+	readPayload();
+
+	// Extract the filename from the payload
+	m_fileName = reinterpret_cast<char *>(m_payload);
+
+	int32_t result;
+	TEntry entry;
+
+	// Determine if the file exists and send the result to the remote client
+	result = Utils::GetFileInfo(m_fileName, &entry);
+	m_socket->write(&result, sizeof(result));
+
+	// If the file exists then the remote client will be awaiting its transfer, so send it now
+	if (result  == KErrNone)
+	{
+		sendFile(m_fileName);
+	}
+}
+
+/**
  * Short description.
  * Long multi line description.
  *

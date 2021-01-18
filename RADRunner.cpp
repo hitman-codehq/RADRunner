@@ -17,11 +17,12 @@
 
 #define ARGS_REMOTE 0
 #define ARGS_EXECUTE 1
-#define ARGS_SCRIPT 2
-#define ARGS_SEND 3
-#define ARGS_SERVER 4
-#define ARGS_SHUTDOWN 5
-#define ARGS_NUM_ARGS 6
+#define ARGS_GET 2
+#define ARGS_SCRIPT 3
+#define ARGS_SEND 4
+#define ARGS_SERVER 5
+#define ARGS_SHUTDOWN 6
+#define ARGS_NUM_ARGS 7
 
 #ifdef __amigaos4__
 
@@ -50,7 +51,7 @@ static const char __attribute__((used)) g_stackCookie[] = "$STACK:262144";
 /* Template for use in obtaining command line parameters.  Remember to change the indexes */
 /* in Scanner.h if the ordering or number of these change */
 
-static const char g_template[] = "REMOTE,EXECUTE/K,SCRIPT/K,SEND/K,SERVER/S,SHUTDOWN/S";
+static const char g_template[] = "REMOTE,EXECUTE/K,GET/K,SCRIPT/K,SEND/K,SERVER/S,SHUTDOWN/S";
 
 static volatile bool g_break;		/* Set to true if when ctrl-c is hit by the user */
 static RArgs g_args;				/* Contains the parsed command line arguments */
@@ -117,6 +118,17 @@ void ProcessScript(const char *a_scriptName)
 						Utils::Error("No value was specified for the argument \"execute\"");
 					}
 				}
+				else if (command == "get")
+				{
+					if (argumentToken != nullptr)
+					{
+						handler = new CGet(&g_socket, argumentToken);
+					}
+					else
+					{
+						Utils::Error("No value was specified for the argument \"get\"");
+					}
+				}
 				else if (command == "send")
 				{
 					if (argumentToken != nullptr)
@@ -131,6 +143,10 @@ void ProcessScript(const char *a_scriptName)
 				else if (command == "shutdown")
 				{
 					handler = new CShutdown(&g_socket);
+				}
+				else
+				{
+					printf("Warning: Unknown command \"%s\" found\n", command.c_str());
 				}
 
 				if (handler != nullptr)
@@ -204,6 +220,10 @@ void StartServer()
 							if (command.m_command == EExecute)
 							{
 								handler = new CExecute(&g_socket, command);
+							}
+							else if (command.m_command == EGet)
+							{
+								handler = new CGet(&g_socket, command);
 							}
 							else if (command.m_command == ESend)
 							{
@@ -335,6 +355,11 @@ int main(int a_argc, const char *a_argv[])
 						if (g_args[ARGS_EXECUTE] != nullptr)
 						{
 							handler = new CExecute(&g_socket, g_args[ARGS_EXECUTE]);
+						}
+
+						if (g_args[ARGS_GET] != nullptr)
+						{
+							handler = new CGet(&g_socket, g_args[ARGS_GET]);
 						}
 
 						if (g_args[ARGS_SEND] != nullptr)

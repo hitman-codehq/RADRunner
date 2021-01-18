@@ -8,6 +8,7 @@
 const char *g_commandNames[] =
 {
 	"execute",
+	"get",
 	"send",
 	"shutdown"
 };
@@ -31,6 +32,63 @@ void CExecute::sendRequest()
 	if (sendCommand())
 	{
 		m_socket->write(m_fileName, payloadLength);
+	}
+}
+
+/**
+ * Requests a file from the remote server.
+ * Transfers a file from the remote server to a local host and displays an error if the file is not able
+ * to be found on the server.  If a qualified filename is specified then the path will be used on the remote
+ * server but stripped on the local client, so that it will be written into the current directory.
+ *
+ * @date	Saturday 16-Jan-2021 11:56 am, Code HQ Bergmannstrasse
+ */
+
+void CGet::sendRequest()
+{
+	int length;
+	int32_t payloadLength = static_cast<int32_t>(strlen(m_fileName) + 1);
+	int32_t result;
+	m_command.m_length = payloadLength;
+
+	printf("get: Requesting file \"%s\"\n", m_fileName);
+
+	if (sendCommand())
+	{
+		if (m_socket->write(m_fileName, payloadLength) == payloadLength)
+		{
+			// Read the response to the request and if it was successful, transfer the file
+			if ((length = m_socket->read(&result, (sizeof(result)))) > 0)
+			{
+				if (result == KErrNone)
+				{
+					uint32_t totalSize;
+
+					m_socket->read(&totalSize, sizeof(totalSize));
+					SWAP(&totalSize);
+
+					// Transfer the file from the remote server, stripping any path present in its name, and
+					// store it in the current directory
+					readFile(Utils::filePart(m_fileName), totalSize);
+				}
+				else
+				{
+					Utils::Error("Received invalid response %d", result);
+				}
+			}
+			else
+			{
+				Utils::Error("Unable to read response");
+			}
+		}
+		else
+		{
+			Utils::Error("Unable to send payload");
+		}
+	}
+	else
+	{
+		Utils::Error("Unable to send request");
 	}
 }
 
