@@ -29,9 +29,18 @@ void CExecute::sendRequest()
 	int32_t payloadLength = static_cast<int32_t>(strlen(m_fileName) + 1);
 	m_command.m_length = payloadLength;
 
+	printf("execute: Executing file \"%s\"\n", m_fileName);
+
 	if (sendCommand())
 	{
-		m_socket->write(m_fileName, payloadLength);
+		if (m_socket->write(m_fileName, payloadLength) != payloadLength)
+		{
+			Utils::Error("Unable to send payload");
+		}
+	}
+	else
+	{
+		Utils::Error("Unable to send request");
 	}
 }
 
@@ -158,5 +167,10 @@ void CSend::sendRequest()
 
 void CShutdown::sendRequest()
 {
-	sendCommand();
+	printf("shutdown: Shutting down server\n");
+
+	if (!sendCommand())
+	{
+		Utils::Error("Unable to send request");
+	}
 }
