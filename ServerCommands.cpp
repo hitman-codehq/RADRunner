@@ -37,8 +37,19 @@ void CExecute::execute()
 	}
 	else if (result != 0)
 	{
-		// TODO: CAW - Fix this for Windows
-		printf("execute: Command failed, return code = %d\n", result); //WEXITSTATUS(result));
+		// It's a bit crazy but system() behaves differently under Windows, so we have to take this
+		// into account when calling it
+
+#ifdef WIN32
+
+		printf("execute: Command failed, return code = %d\n", result);
+
+#else /* WIN32 */
+
+		printf("execute: Command failed, return code = %d\n", WEXITSTATUS(result));
+
+#endif /* WIN32 */
+
 	}
 }
 
