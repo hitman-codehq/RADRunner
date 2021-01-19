@@ -14,14 +14,11 @@ const char *g_commandNames[] =
 };
 
 /**
- * Short description.
- * Long multi line description.
- *
- * @pre		Some precondition here
+ * Requests execution of a file.
+ * Requests the remote execution of an executable or script file.  The file's stdout and stderr output
+ * will be displayed on the remote console only.
  *
  * @date	Wednesday 29-Jan-2020 2:13 pm, Scoot flight TR 735 to Singapore
- * @param	Parameter		Description
- * @return	Return value
  */
 
 void CExecute::sendRequest()
@@ -48,7 +45,7 @@ void CExecute::sendRequest()
  * Requests a file from the remote server.
  * Transfers a file from the remote server to a local host and displays an error if the file is not able
  * to be found on the server.  If a qualified filename is specified then the path will be used on the remote
- * server but stripped on the local client, so that it will be written into the current directory.
+ * server but stripped on the local client, so that the file will be written into the current directory.
  *
  * @date	Saturday 16-Jan-2021 11:56 am, Code HQ Bergmannstrasse
  */
@@ -102,14 +99,11 @@ void CGet::sendRequest()
 }
 
 /**
- * Short description.
- * Long multi line description.
- *
- * @pre		Some precondition here
+ * Sends a file to the remote server.
+ * Transfers a file to the remote server.  If a qualified filename is specified then the path will be stripped,
+ * so that the file will be written into the current directory of the remote server.
  *
  * @date	Sunday 17-Nov-2019 3:30 pm, Sankt Oberholz
- * @param	Parameter		Description
- * @return	Return value
  */
 
 void CSend::sendRequest()
@@ -155,14 +149,10 @@ void CSend::sendRequest()
 }
 
 /**
- * Short description.
- * Long multi line description.
- *
- * @pre		Some precondition here
+ * Shuts down the remote server.
+ * Sends a request to the remote server that it shuts itself down.
  *
  * @date	Wednesday 29-Jan-2020 2:52 pm, Scoot flight TR 735 to Singapore
- * @param	Parameter		Description
- * @return	Return value
  */
 
 void CShutdown::sendRequest()

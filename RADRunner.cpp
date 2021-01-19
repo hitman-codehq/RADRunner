@@ -167,14 +167,12 @@ void ProcessScript(const char *a_scriptName)
 }
 
 /**
- * Short description.
- * Long multi line description.
- *
- * @pre		Some precondition here
+ * Launches RADRunner in server mode.
+ * This method must be executed when RADRunner is launched in server mode.  It will listen on a socket for
+ * incoming connections and, when received, will process whatever commands are received from the client.  At
+ * the end of this, it will close the connection to the client and wait for a new connection to come in.
  *
  * @date	Sunday 17-Nov-2019 3:29 pm, Sankt Oberholz
- * @param	Parameter		Description
- * @return	Return value
  */
 
 void StartServer()
@@ -286,14 +284,14 @@ void StartServer()
 }
 
 /**
- * Short description.
- * Long multi line description.
- *
- * @pre		Some precondition here
+ * Entry point of the program.
+ * Reads the arguments passed into the program and determines whether to launch in client or server mode
+ * as appropriate.
  *
  * @date	Sunday 17-Nov-2019 3:30 pm, Sankt Oberholz
- * @param	Parameter		Description
- * @return	Return value
+ * @param	a_argc			Number of arguments passed in
+ * @param	a_arcv			Array of string arguments
+ * @return	RETURN_OK if successful, else RETURN_ERROR
  */
 
 struct Library *IconBase;

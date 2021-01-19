@@ -19,14 +19,10 @@
 #endif /* ! defined(__unix__) || defined(__amigaos__) */
 
 /**
- * Short description.
- * Long multi line description.
- *
- * @pre		Some precondition here
+ * RSocket constructor.
+ * Initialises the socket to a state ready for connection.
  *
  * @date	Wednesday 29-Jan-2020 4:47 pm, Scoot flight TR 735 to Singapore
- * @param	Parameter		Description
- * @return	Return value
  */
 
 RSocket::RSocket()
@@ -37,9 +33,9 @@ RSocket::RSocket()
 /**
  * Opens a socket in either client or server mode.
  * Depending on whether a host name is specified, this method will open a socket for use either as a client
- * or a server.  If a host is specified, it will be resolved and a connection made to the remote server.
- * The host can be either a host name such as codehq.org or an IP address.  If no host is specified, the
- * socket will be opened in a state suitable for listening.
+ * or a server.  If a host is specified, it will be resolved and a connection made to the it.  The host can
+ * be either a host name such as codehq.org or an IP address.  If no host is specified, the socket will be
+ * opened in a state suitable for listening.
  *
  * @date	Saturday 11-Feb-2017 4:37 pm, Code HQ Habersaathstrasse
  * @param	a_pccHost		The name of the host, an IP address or NULL
@@ -106,14 +102,10 @@ int RSocket::open(const char *a_pccHost)
 }
 
 /**
- * Short description.
- * Long multi line description.
- *
- * @pre		Some precondition here
+ * Closes any open connections.
+ * Closes any currently open sockets, setting them back to a disconnected state.
  *
  * @date	Saturday 11-Feb-2017 5:41 pm, Code HQ Habersaathstrasse
- * @param	Parameter		Description
- * @return	Return value
  */
 
 void RSocket::close()
@@ -139,14 +131,16 @@ void RSocket::close()
 }
 
 /**
- * Short description.
- * Long multi line description.
+ * Listens for incoming connections.
+ * Binds the socket to a local address and the given port number and listens for incoming connections
+ * on it.  When a new connection is accepted, the connected socket will be put into use as the active
+ * socket, and data can then be read from, and written to, the remote host.
  *
- * @pre		Some precondition here
+ * @pre		The socket has been opened with open()
  *
  * @date	Sunday 12-Feb-2017 7:53 am, Code HQ Habersaathstrasse
- * @param	Parameter		Description
- * @return	Return value
+ * @param	a_sPort			The port on which to listen for connections
+ * @return	KErrNone if successful, else KErrGeneral if host connection failed
  */
 
 int RSocket::Listen(short a_sPort)
@@ -183,14 +177,15 @@ int RSocket::Listen(short a_sPort)
 }
 
 /**
- * Short description.
- * Long multi line description.
+ * Reads data from the socket.
+ * Reads the number of bytes requested from the socket.
  *
- * @pre		Some precondition here
+ * @pre		The socket has been opened with open()
  *
  * @date	Saturday 11-Feb-2017 5:59 pm, Code HQ Habersaathstrasse
- * @param	Parameter		Description
- * @return	Return value
+ * @param	a_pvBuffer		Pointer to the buffer into which to read the data
+ * @param	a_iSize			The number of bytes to be read
+ * @return	The number of bytes received, or -1 if an error occurred
  */
 
 int RSocket::read(void *a_pvBuffer, int a_iSize)
@@ -199,14 +194,15 @@ int RSocket::read(void *a_pvBuffer, int a_iSize)
 }
 
 /**
- * Short description.
- * Long multi line description.
+ * Writes data to the socket.
+ * Writes the number of bytes requested to the socket.
  *
- * @pre		Some precondition here
+ * @pre		The socket has been opened with open()
  *
  * @date	Saturday 11-Feb-2017 5:55 pm, Code HQ Habersaathstrasse
- * @param	Parameter		Description
- * @return	Return value
+ * @param	a_pcvBuffer		Pointer to the buffer from which to write the data
+ * @param	a_iSize			The number of bytes to be written
+ * @return	The number of bytes sent, or -1 if an error occurred
  */
 
 int RSocket::write(const void *a_pcvBuffer, int a_iSize)
@@ -219,7 +215,7 @@ int RSocket::write(const void *a_pcvBuffer, int a_iSize)
  * A convenience method that writes a NULL terminated string to the socket, including the NULL
  * terminator itself.
  *
- * @date	Saturday 11-Feb-2017 5:55 pm, Code HQ Habersaathstrasse
+ * @date	Sunday 10-Jan-2021 7:30 am, Code HQ Bergmannstrasse
  * @param	a_pccBuffer		A pointer to the NULL terminated string to be written
  * @return	The number of bytes written to the socket
  */

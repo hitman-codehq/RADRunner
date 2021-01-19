@@ -12,15 +12,23 @@ typedef int SOCKET;
 
 #endif /* ! WIN32 */
 
+/**
+ * A class providing synchronous socket communications.
+ * This class provides basic synchronous socket communications, such as sending and receiving of data,
+ * as well as automatic host name resolution when opening new sockets that reference a host name.  It
+ * can be used in either client or server mode, where in server mode it can listen for and accept
+ * incoming connections.
+ */
+
 class RSocket
 {
 private:
 
-	SOCKET	m_iServerSocket;
+	SOCKET	m_iServerSocket;	/**< The socket on which to listen for connections */
 
 public:
 
-	SOCKET	m_iSocket;
+	SOCKET	m_iSocket;			/**< The socket with which data to transfer data */
 
 public:
 

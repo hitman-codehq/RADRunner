@@ -12,14 +12,11 @@
 #endif /* __amigaos__ */
 
 /**
- * Short description.
- * Long multi line description.
- *
- * @pre		Some precondition here
+ * Executes a file.
+ * Runs the executable or script file specified by the client, displaying its stdout and stderr output
+ * on the console.
  *
  * @date	Wednesday 29-Jan-2020 2:24 pm, Scoot flight TR 735 to Singapore
- * @param	Parameter		Description
- * @return	Return value
  */
 
 void CExecute::execute()
@@ -83,14 +80,11 @@ void CGet::execute()
 }
 
 /**
- * Short description.
- * Long multi line description.
- *
- * @pre		Some precondition here
+ * Receives a file from the remote client.
+ * Transfers a file from the remote client and writes it to a local file.  The file will be written
+ * into the current directory.
  *
  * @date	Wednesday 29-Jan-2020 12:38 pm, Scoot flight TR 735 to Singapore
- * @param	Parameter		Description
- * @return	Return value
  */
 
 void CSend::execute()
