@@ -40,7 +40,7 @@ struct SCommand
 public:
 
 	uint32_t	m_command;	/**< Command to be performed by the server */
-	uint32_t	m_length;	/**< Length of payload after structure */
+	uint32_t	m_size;		/**< Size in bytes of payload after structure */
 };
 
 /**

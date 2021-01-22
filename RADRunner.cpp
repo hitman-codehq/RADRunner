@@ -178,7 +178,7 @@ void ProcessScript(const char *a_scriptName)
 void StartServer()
 {
 	bool disconnect, shutdown;
-	int length, result, selectResult;
+	int result, selectResult, size;
 	struct SCommand command;
 	fd_set socketSet;
 
@@ -206,10 +206,10 @@ void StartServer()
 
 					if (selectResult > 0)
 					{
-						if ((length = g_socket.read(&command, sizeof(command))) > 0)
+						if ((size = g_socket.read(&command, sizeof(command))) > 0)
 						{
 							SWAP(&command.m_command);
-							SWAP(&command.m_length);
+							SWAP(&command.m_size);
 
 							printf("Received request \"%s\"\n", g_commandNames[command.m_command]);
 

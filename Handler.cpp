@@ -77,10 +77,10 @@ bool CHandler::readPayload()
 	bool retVal = true;
 
 	// If the command has a payload, allocate an appropriately sized buffer and read it
-	if (m_command.m_length > 0)
+	if (m_command.m_size > 0)
 	{
-		m_payload = new unsigned char[m_command.m_length];
-		retVal = (m_socket->read(m_payload, m_command.m_length) == static_cast<int>(m_command.m_length));
+		m_payload = new unsigned char[m_command.m_size];
+		retVal = (m_socket->read(m_payload, m_command.m_size) == static_cast<int>(m_command.m_size));
 	}
 
 	return retVal;
@@ -99,7 +99,7 @@ bool CHandler::sendCommand()
 	SCommand command = m_command;
 
 	SWAP(&command.m_command);
-	SWAP(&command.m_length);
+	SWAP(&command.m_size);
 
 	return (m_socket->write(&command, sizeof(command)) == sizeof(command));
 }

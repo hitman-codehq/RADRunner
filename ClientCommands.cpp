@@ -23,14 +23,15 @@ const char *g_commandNames[] =
 
 void CExecute::sendRequest()
 {
-	int32_t payloadLength = static_cast<int32_t>(strlen(m_fileName) + 1);
-	m_command.m_length = payloadLength;
+	int32_t payloadSize = static_cast<int32_t>(strlen(m_fileName) + 1);
 
 	printf("execute: Executing file \"%s\"\n", m_fileName);
 
+	m_command.m_size = payloadSize;
+
 	if (sendCommand())
 	{
-		if (m_socket->write(m_fileName, payloadLength) != payloadLength)
+		if (m_socket->write(m_fileName, payloadSize) != payloadSize)
 		{
 			Utils::Error("Unable to send payload");
 		}
@@ -52,19 +53,20 @@ void CExecute::sendRequest()
 
 void CGet::sendRequest()
 {
-	int length;
-	int32_t payloadLength = static_cast<int32_t>(strlen(m_fileName) + 1);
+	int size;
+	int32_t payloadSize = static_cast<int32_t>(strlen(m_fileName) + 1);
 	int32_t result;
-	m_command.m_length = payloadLength;
 
 	printf("get: Requesting file \"%s\"\n", m_fileName);
 
+	m_command.m_size = payloadSize;
+
 	if (sendCommand())
 	{
-		if (m_socket->write(m_fileName, payloadLength) == payloadLength)
+		if (m_socket->write(m_fileName, payloadSize) == payloadSize)
 		{
 			// Read the response to the request and if it was successful, transfer the file
-			if ((length = m_socket->read(&result, (sizeof(result)))) > 0)
+			if ((size = m_socket->read(&result, (sizeof(result)))) > 0)
 			{
 				if (result == KErrNone)
 				{
@@ -125,13 +127,13 @@ void CSend::sendRequest()
 	// in the destination
 	const char *fileName = Utils::filePart(m_fileName);
 
-	// Send the length of just the filename as the payload length
-	int32_t payloadLength = static_cast<int32_t>(strlen(fileName) + 1);
-	m_command.m_length = payloadLength;
+	// Send the size of just the filename as the payload Size
+	int32_t payloadSize = static_cast<int32_t>(strlen(fileName) + 1);
+	m_command.m_size = payloadSize;
 
 	if (sendCommand())
 	{
-		if (m_socket->write(fileName, payloadLength) == payloadLength)
+		if (m_socket->write(fileName, payloadSize) == payloadSize)
 		{
 			sendFile(m_fileName);
 		}
