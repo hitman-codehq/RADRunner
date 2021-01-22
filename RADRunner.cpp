@@ -191,7 +191,7 @@ void StartServer()
 			printf("Listening for a client connection... ");
 			fflush(stdout);
 
-			if ((result = g_socket.Listen(80)) == KErrNone)
+			if ((result = g_socket.listen(80)) == KErrNone)
 			{
 				printf("connected\n");
 

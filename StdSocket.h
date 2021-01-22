@@ -43,7 +43,7 @@ public:
 
 	void close();
 
-	int Listen(short a_sPort);
+	int listen(short a_sPort);
 
 	int read(void *a_pvBuffer, int a_iSize);
 

@@ -143,7 +143,7 @@ void RSocket::close()
  * @return	KErrNone if successful, else KErrGeneral if host connection failed
  */
 
-int RSocket::Listen(short a_sPort)
+int RSocket::listen(short a_sPort)
 {
 	int RetVal;
 	socklen_t ClientSize;
@@ -158,7 +158,7 @@ int RSocket::Listen(short a_sPort)
 
 	if (bind(m_iSocket, (struct sockaddr *) &Server, sizeof(Server)) != SOCKET_ERROR)
 	{
-		if (listen(m_iSocket, 1) == 0)
+		if (::listen(m_iSocket, 1) == 0)
 		{
 			ClientSize = sizeof(Client);
 			Socket = accept(m_iSocket, (struct sockaddr *) &Client, &ClientSize);
