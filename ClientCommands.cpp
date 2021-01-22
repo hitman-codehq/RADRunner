@@ -2,7 +2,7 @@
 #include <StdFuncs.h>
 #include <File.h>
 #include <string.h>
-#include "ClientCommands.h"
+#include "Commands.h"
 #include "StdSocket.h"
 
 const char *g_commandNames[] =

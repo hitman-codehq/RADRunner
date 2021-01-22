@@ -1,6 +1,6 @@
 
-#ifndef CLIENTCOMMANDS_H
-#define CLIENTCOMMANDS_H
+#ifndef COMMANDS_H
+#define COMMANDS_H
 
 #include "StdSocket.h"
 
@@ -179,4 +179,4 @@ public:
 
 extern const char *g_commandNames[];
 
-#endif /* ! CLIENTCOMMANDS_H */
+#endif /* ! COMMANDS_H */

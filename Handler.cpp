@@ -1,7 +1,7 @@
 
 #include <StdFuncs.h>
 #include <File.h>
-#include "ClientCommands.h"
+#include "Commands.h"
 #include "StdSocket.h"
 
 /**

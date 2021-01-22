@@ -5,7 +5,7 @@
 #include <StdTextFile.h>
 #include <signal.h>
 #include <string.h>
-#include "ClientCommands.h"
+#include "Commands.h"
 #include "DirWrapper.h"
 #include "StdSocket.h"
 
