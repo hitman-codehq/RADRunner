@@ -7,10 +7,12 @@
 #ifdef __amigaos__
 
 #define SWAP(number)
+#define SWAP64(number)
 
 #else /* ! __amigaos__ */
 
 #define SWAP(number) Utils::swap32(number)
+#define SWAP64(number) Utils::swap64(number)
 
 #endif /* ! __amigaos__ */
 
@@ -41,6 +43,19 @@ public:
 
 	uint32_t	m_command;	/**< Command to be performed by the server */
 	uint32_t	m_size;		/**< Size in bytes of payload after structure */
+};
+
+/**
+ * Structure containing information about file being transferred.
+ * Contains information such as a file's name and its timestamp, to be transferred as the header of any file
+ * that is tranferred between hosts.  Instances of this structure are dynamically allocated, with their size
+ * depending on the size of the file's name.
+ */
+
+struct SFileInfo
+{
+	TInt64	m_microseconds;	/**< Timestamp of the file, in microseconds since 01.01.01 */
+	char	m_fileName[1];	/**< The file's name, without a path component */
 };
 
 /**

@@ -5,6 +5,7 @@
 #if defined(__unix__) || defined(__amigaos__)
 
 #include <netdb.h>
+#include <string.h>
 #include <unistd.h>
 #include <sys/socket.h>
 

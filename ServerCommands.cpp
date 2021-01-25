@@ -90,18 +90,24 @@ void CGet::execute()
 void CSend::execute()
 {
 	uint32_t fileSize;
-	RFile file;
 
 	readPayload();
 
-	// Extract the filename from the payload
-	m_fileName = reinterpret_cast<char *>(m_payload);
+	// Extract the file's information from the payload
+	struct SFileInfo *fileInfo = reinterpret_cast<struct SFileInfo *>(m_payload);
+	SWAP64(&fileInfo->m_microseconds);
+	m_fileName = fileInfo->m_fileName;
 
 	m_socket->read(&fileSize, sizeof(fileSize));
 	SWAP(&fileSize);
 
 	if (readFile(m_fileName, fileSize) == KErrNone)
 	{
+		// Create a TEntry instance and use the transferred microseconds value to initialise its timestamp
+		// related members, so that it can be used to set the timestamp of the file just received
+		TEntry entry(TDateTime(fileInfo->m_microseconds));
+
+		Utils::setFileDate(m_fileName, entry);
 
 #ifdef __amigaos__
 

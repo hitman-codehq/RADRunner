@@ -110,30 +110,36 @@ void CGet::sendRequest()
 
 void CSend::sendRequest()
 {
-	RFile file;
+	TEntry entry;
 
 	printf("%s: Sending file \"%s\"\n", g_commandNames[m_command.m_command], m_fileName);
 
-	if (file.open(m_fileName, EFileRead) != KErrNone)
+	if (Utils::GetFileInfo(m_fileName, &entry) != KErrNone)
 	{
 		Utils::Error("Unable to open file \"%s\"", m_fileName);
 
 		return;
 	}
 
-	file.close();
-
 	// Strip any path component from the file as we want it to be written to the current directory
 	// in the destination
 	const char *fileName = Utils::filePart(m_fileName);
 
 	// Send the size of just the filename as the payload Size
-	int32_t payloadSize = static_cast<int32_t>(strlen(fileName) + 1);
+	int32_t payloadSize = static_cast<int32_t>(sizeof(SFileInfo) + strlen(fileName) + 1);
 	m_command.m_size = payloadSize;
 
 	if (sendCommand())
 	{
-		if (m_socket->write(fileName, payloadSize) == payloadSize)
+		// Allocate an SFileInfo structure of a size large enough to hold the file's name
+		struct SFileInfo *fileInfo = reinterpret_cast<struct SFileInfo *>(new unsigned char [payloadSize]);
+
+		// And initialise it with the file's name and timestamp
+		fileInfo->m_microseconds = entry.iModified.Int64();
+		SWAP64(&fileInfo->m_microseconds);
+		strcpy(fileInfo->m_fileName, fileName);
+
+		if (m_socket->write(fileInfo, payloadSize) == payloadSize)
 		{
 			sendFile(m_fileName);
 		}
@@ -141,13 +147,13 @@ void CSend::sendRequest()
 		{
 			Utils::Error("Unable to send payload");
 		}
+
+		delete [] reinterpret_cast<unsigned char *>(fileInfo);
 	}
 	else
 	{
 		Utils::Error("Unable to send request");
 	}
-
-	file.close();
 }
 
 /**
