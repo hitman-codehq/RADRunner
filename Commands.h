@@ -128,9 +128,9 @@ public:
 	/** Constructor to be used when creating server instances */
 	CExecute(RSocket *a_socket, const SCommand &a_command) : CHandler(a_socket, a_command) { }
 
-	virtual void execute();
+	void execute() override;
 
-	virtual void sendRequest();
+	void sendRequest() override;
 };
 
 /**
@@ -151,9 +151,9 @@ public:
 	/** Constructor to be used when creating server instances */
 	CGet(RSocket *a_socket, const SCommand &a_command) : CHandler(a_socket, a_command) { }
 
-	virtual void execute();
+	void execute() override;
 
-	virtual void sendRequest();
+	void sendRequest() override;
 };
 
 /**
@@ -174,9 +174,9 @@ public:
 	/** Constructor to be used when creating server instances */
 	CSend(RSocket *a_socket, const SCommand &a_command) : CHandler(a_socket, a_command) { }
 
-	virtual void execute();
+	void execute() override;
 
-	virtual void sendRequest();
+	void sendRequest() override;
 };
 
 /**
@@ -192,9 +192,9 @@ public:
 	CShutdown(RSocket *a_socket) : CHandler(a_socket, EShutdown) { }
 
 	/** Empty implementation of unused server side method */
-	virtual void execute() { }
+	void execute() override { }
 
-	virtual void sendRequest();
+	void sendRequest() override;
 };
 
 /**
@@ -212,9 +212,9 @@ public:
 	/** Constructor to be used when creating server instances */
 	CVersion(RSocket *a_socket, const SCommand &a_command) : CHandler(a_socket, a_command) { }
 
-	virtual void execute();
+	void execute() override;
 
-	virtual void sendRequest();
+	void sendRequest() override;
 };
 
 extern const char *g_commandNames[];
