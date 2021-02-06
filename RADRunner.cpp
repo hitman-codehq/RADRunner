@@ -232,6 +232,10 @@ void StartServer()
 								shutdown = true;
 								printf("shutdown: Exiting\n");
 							}
+							else if (command.m_command == EVersion)
+							{
+								handler = new CVersion(&g_socket, command);
+							}
 							else
 							{
 								printf("Invalid command received: %d\n", command.m_command);
@@ -342,14 +346,19 @@ int main(int a_argc, const char *a_argv[])
 			{
 				if (g_socket.open(g_args[ARGS_REMOTE]) == KErrNone)
 				{
+					/* Start by checking whether the server's protocol version is supported.  This handler will */
+					/* display an error and exit if it is not */
+					CHandler *handler = new CVersion(&g_socket);
+
+					handler->sendRequest();
+					delete handler;
+
 					if (g_args[ARGS_SCRIPT] != nullptr)
 					{
 						ProcessScript(g_args[ARGS_SCRIPT]);
 					}
 					else
 					{
-						CHandler *handler = nullptr;
-
 						if (g_args[ARGS_EXECUTE] != nullptr)
 						{
 							handler = new CExecute(&g_socket, g_args[ARGS_EXECUTE]);

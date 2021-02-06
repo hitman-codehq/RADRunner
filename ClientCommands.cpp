@@ -10,7 +10,8 @@ const char *g_commandNames[] =
 	"execute",
 	"get",
 	"send",
-	"shutdown"
+	"shutdown",
+	"version"
 };
 
 /**
@@ -168,6 +169,40 @@ void CShutdown::sendRequest()
 	printf("shutdown: Shutting down server\n");
 
 	if (!sendCommand())
+	{
+		Utils::Error("Unable to send request");
+	}
+}
+
+/**
+ * Verfies the client's protocol version.
+ * Requests the remote server's protocol version, and shuts the client down if it is not supported.
+ *
+ * @date	Saturday 06-Feb-2021 6:51 am, Code HQ Bergmannstrasse
+ */
+
+void CVersion::sendRequest()
+{
+	if (sendCommand())
+	{
+		uint32_t serverVersion, version = ((PROTOCOL_MAJOR << 16) | PROTOCOL_MINOR);
+
+		if (m_socket->read(&serverVersion, sizeof(serverVersion)) == sizeof(serverVersion))
+		{
+			SWAP(&serverVersion);
+
+			if (serverVersion != version)
+			{
+				printf("version: Incompatible server version detected, shutting down\n");
+				exit(1);
+			}
+		}
+		else
+		{
+			Utils::Error("Unable to read response");
+		}
+	}
+	else
 	{
 		Utils::Error("Unable to send request");
 	}

@@ -16,6 +16,10 @@
 
 #endif /* ! __amigaos__ */
 
+/* The protocol version supported by the current build */
+#define PROTOCOL_MAJOR 0
+#define PROTOCOL_MINOR 1
+
 /**
  * The commands supported by the program.
  * Each of these commands is implemented by a matching CHandler derived class.
@@ -26,7 +30,8 @@ enum TCommands
 	EExecute,
 	EGet,
 	ESend,
-	EShutdown
+	EShutdown,
+	EVersion
 };
 
 /**
@@ -188,6 +193,26 @@ public:
 
 	/** Empty implementation of unused server side method */
 	virtual void execute() { }
+
+	virtual void sendRequest();
+};
+
+/**
+ * Command for requesting the supported protocol version.
+ * Sends a command to the remote server to request its supported protocol version.
+ */
+
+class CVersion : public CHandler
+{
+public:
+
+	/** Constructor to be used when creating client instances */
+	CVersion(RSocket *a_socket) : CHandler(a_socket, EVersion) { }
+
+	/** Constructor to be used when creating server instances */
+	CVersion(RSocket *a_socket, const SCommand &a_command) : CHandler(a_socket, a_command) { }
+
+	virtual void execute();
 
 	virtual void sendRequest();
 };

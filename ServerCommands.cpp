@@ -122,3 +122,26 @@ void CSend::execute()
 
 	}
 }
+
+/**
+ * Sends the server's protocol version.
+ * Sends the currently supported protocol version to the client.  No validation checking is done as it is
+ * the client's responsibility to determine compatibility.
+ *
+ * @date	Saturday 06-Feb-2021 7:02 am, Code HQ Bergmannstrasse
+ */
+
+void CVersion::execute()
+{
+	if (readPayload())
+	{
+		uint32_t serverVersion = ((PROTOCOL_MAJOR << 16) | PROTOCOL_MINOR);
+
+		SWAP(&serverVersion);
+
+		if (m_socket->write(&serverVersion, sizeof(serverVersion)) != sizeof(serverVersion))
+		{
+			Utils::Error("Unable to send server version");
+		}
+	}
+}
