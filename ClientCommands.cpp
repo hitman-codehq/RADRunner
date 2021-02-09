@@ -115,9 +115,19 @@ void CSend::sendRequest()
 
 	printf("%s: Sending file \"%s\"\n", g_commandNames[m_command.m_command], m_fileName);
 
+	/* If the file doesn't exist then bail out immediately */
 	if (Utils::GetFileInfo(m_fileName, &entry) != KErrNone)
 	{
 		Utils::Error("Unable to open file \"%s\"", m_fileName);
+
+		return;
+	}
+
+	/* If the file specified is actually a directory then the server will be waiting for data that will */
+	/* never arrive, so check for this and bail out immediately */
+	if (entry.IsDir())
+	{
+		Utils::Error("\"%s\" is a directory", m_fileName);
 
 		return;
 	}
