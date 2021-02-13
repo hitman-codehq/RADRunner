@@ -38,6 +38,11 @@ int CHandler::readFile(const char *a_fileName, uint32_t a_fileSize)
 		int bytesRead = 0, bytesToRead, size;
 		unsigned char buffer[1024]; // TODO: CAW
 
+		// Determine the start time so that it can be used to calculate the amount of time the transfer took
+		TTime now;
+		now.HomeTime();
+		TInt64 startTime = now.Int64();
+
 		do
 		{
 			bytesToRead = ((a_fileSize - bytesRead) >= sizeof(buffer)) ? sizeof(buffer) : (a_fileSize - bytesRead);
@@ -51,7 +56,14 @@ int CHandler::readFile(const char *a_fileName, uint32_t a_fileSize)
 		}
 		while (bytesRead < static_cast<int>(a_fileSize));
 
-		printf("%s: Wrote %d bytes to file \"%s\"\n", g_commandNames[m_command.m_command], bytesRead, a_fileName);
+		// Determine the end time and the number of milliseconds taken to perform the transfer
+		now.HomeTime();
+		TInt64 endTime = now.Int64();
+		TInt64 total = ((endTime - startTime) / 1000);
+
+		// Cast the time results to integers when printing as Amiga OS doesn't support 64 bit format specifiers
+		printf("%s: Wrote %d.%d Kilobytes to file \"%s\" in %d.%d seconds\n", g_commandNames[m_command.m_command], (bytesRead / 1024),
+			(bytesRead % 1024), a_fileName, static_cast<int>(total / 1000), static_cast<int>(total % 1000));
 
 		file.close();
 	}
@@ -136,12 +148,26 @@ int CHandler::sendFile(const char *a_fileName)
 
 			if ((retVal = file.open(a_fileName, EFileRead)) == KErrNone)
 			{
+				// Determine the start time so that it can be used to calculate the amount of time the transfer took
+				TTime now;
+				now.HomeTime();
+				TInt64 startTime = now.Int64();
+
 				while ((size = file.read(buffer, sizeof(buffer))) > 0)
 				{
 					m_socket->write(buffer, static_cast<int>(size));
 				}
 
 				file.close();
+
+				// Determine the end time and the number of milliseconds taken to perform the transfer
+				now.HomeTime();
+				TInt64 endTime = now.Int64();
+				TInt64 total = ((endTime - startTime) / 1000);
+
+				// Cast the time results to integers when printing as Amiga OS doesn't support 64 bit format specifiers
+				printf("%s: Transferred %u.%u Kilobytes in %d.%d seconds\n", g_commandNames[m_command.m_command], (entry.iSize / 1024),
+					(entry.iSize % 1024), static_cast<int>(total / 1000), static_cast<int>(total % 1000));
 			}
 			else
 			{
