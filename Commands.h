@@ -20,6 +20,9 @@
 #define PROTOCOL_MAJOR 0
 #define PROTOCOL_MINOR 1
 
+/* The size of the buffer used for capturing stdout */
+#define STDOUT_BUFFER_SIZE 1024
+
 /**
  * The commands supported by the program.
  * Each of these commands is implemented by a matching CHandler derived class.
@@ -120,6 +123,15 @@ class CExecute : public CHandler
 {
 	const char	*m_fileName;	/**< The name of the file to be executed */
 
+#ifdef WIN32
+
+	HANDLE m_stdInRead;			/**< Handle for reading from stdin (child) */
+	HANDLE m_stdInWrite;		/**< Handle for writing to stdin (parent) */
+	HANDLE m_stdOutRead;		/**< Handle for reading from stdout (parent) */
+	HANDLE m_stdOutWrite;		/**< Handle for writing to std out (child) */
+
+#endif /* WIN32 */
+
 public:
 
 	/** Constructor to be used when creating client instances */
@@ -131,6 +143,10 @@ public:
 	void execute() override;
 
 	void sendRequest() override;
+
+	int createChildProcess(char *commandName);
+
+	int launchCommand(char *commandName);
 };
 
 /**

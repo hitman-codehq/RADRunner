@@ -26,16 +26,43 @@ void CExecute::execute()
 	readPayload();
 
 	printf("execute: Executing command \"%s\"\n", m_payload);
+
+#ifdef WIN32
+
+	result = launchCommand(reinterpret_cast<char *>(m_payload));
+
+	/* Write a failure completion code, to let the client know that it should not listen for the */
+	/* command output to be streamed */
+	if (result != KErrNone)
+	{
+		m_socket->write(&result, sizeof(result));
+	}
+
+#else /* ! WIN32 */
+
 	result = system(reinterpret_cast<const char *>(m_payload));
 
-	if ((result == -1) || (result == 127))
+	/* Write the completion code, to let the client know whether it should listen for the command */
+	/* output to be streamed */
+	m_socket->write(&result, sizeof(result));
+
+#endif /* ! WIN32 */
+
+	/* If the client was launched successfully then send two NULL terminators in a row.  This is the */
+	/* signal to the client that the stdout output stream has ended */
+	if (result == KErrNone)
+	{
+		char terminators[2] = { 0, 0 };
+		m_socket->write(terminators, sizeof(terminators));
+	}
+	else if ((result == -1) || (result == 127))
 	{
 		printf("execute: Unable to launch command\n");
 	}
 	else if (result != 0)
 	{
-		// It's a bit crazy but system() behaves differently under Windows, so we have to take this
-		// into account when calling it
+		// It's a bit crazy but launching behaves differently under Windows, so we have to take this
+		// into account
 
 #ifdef WIN32
 

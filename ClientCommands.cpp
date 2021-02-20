@@ -32,7 +32,63 @@ void CExecute::sendRequest()
 
 	if (sendCommand())
 	{
-		if (m_socket->write(m_fileName, payloadSize) != payloadSize)
+		if (m_socket->write(m_fileName, payloadSize) == payloadSize)
+		{
+			int size;
+			int32_t result;
+
+			/* Read the response to the request and if it was successful, transfer the file */
+			if ((size = m_socket->read(&result, (sizeof(result)))) > 0)
+			{
+				if (result == KErrNone)
+				{
+					bool done = false;
+					char *buffer = new char[STDOUT_BUFFER_SIZE];
+					int bytesRead;
+
+					/* Loop around and read the remote command's stdout and stderr output and print it out.  This */
+					/* will be terminated by two NULL terminators in a row, so search each received line for these */
+					/* and, when found, break out of the loop */
+					do
+					{
+						if ((bytesRead = m_socket->read(buffer, (sizeof(buffer) - 1))) > 0)
+						{
+							buffer[bytesRead] = '\0';
+							printf("%s", buffer);
+
+							/* If at least two bytes have been received then check for them both being NULL */
+							if (bytesRead >= 2)
+							{
+								for (int index = 0; index < (bytesRead - 1); ++index)
+								{
+									if ((buffer[index] == 0) && (buffer[index + 1] == 0))
+									{
+										printf("execute: Command complete\n");
+										done = true;
+									}
+								}
+							}
+						}
+						else
+						{
+							done = true;
+						}
+					}
+					while (!done);
+
+					delete [] buffer;
+				}
+				else
+				{
+						Utils::Error("Received invalid response %d", result);
+				}
+			}
+			else
+			{
+				Utils::Error("Unable to read response");
+			}
+		}
+		else
 		{
 			Utils::Error("Unable to send payload");
 		}
