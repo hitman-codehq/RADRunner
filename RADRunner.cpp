@@ -86,7 +86,7 @@ void ProcessScript(const char *a_scriptName)
 	{
 		const char *line;
 
-		// Iterate through the script, reading each line and parsing it
+		/* Iterate through the script, reading each line and parsing it */
 		while ((line = script.GetLine()) != nullptr)
 		{
 			int length;
@@ -94,7 +94,7 @@ void ProcessScript(const char *a_scriptName)
 
 			const char *commandToken;
 
-			// Extract the first token on the line
+			/* Extract the first token on the line */
 			if ((commandToken = tokens.NextToken(&length)) != nullptr)
 			{
 				CHandler *handler = nullptr;
@@ -102,7 +102,7 @@ void ProcessScript(const char *a_scriptName)
 
 				const char *argumentToken = tokens.NextToken(&length);
 
-				// If it is a comment character then ignore it and continue to the next line
+				/* If it is a comment character then ignore it and continue to the next line */
 				if (command == "#")
 				{
 					continue;

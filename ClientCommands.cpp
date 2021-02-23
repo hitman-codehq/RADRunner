@@ -122,7 +122,7 @@ void CGet::sendRequest()
 	{
 		if (m_socket->write(m_fileName, payloadSize) == payloadSize)
 		{
-			// Read the response to the request and if it was successful, transfer the file
+			/* Read the response to the request and if it was successful, transfer the file */
 			if ((size = m_socket->read(&result, (sizeof(result)))) > 0)
 			{
 				if (result == KErrNone)
@@ -132,8 +132,8 @@ void CGet::sendRequest()
 					m_socket->read(&totalSize, sizeof(totalSize));
 					SWAP(&totalSize);
 
-					// Transfer the file from the remote server, stripping any path present in its name, and
-					// store it in the current directory
+					/* Transfer the file from the remote server, stripping any path present in its name, and */
+					/* store it in the current directory */
 					readFile(Utils::filePart(m_fileName), totalSize);
 				}
 				else
@@ -188,20 +188,20 @@ void CSend::sendRequest()
 		return;
 	}
 
-	// Strip any path component from the file as we want it to be written to the current directory
-	// in the destination
+	/* Strip any path component from the file as we want it to be written to the current directory */
+	/* in the destination */
 	const char *fileName = Utils::filePart(m_fileName);
 
-	// Send the size of just the filename as the payload Size
+	/* Send the size of just the filename as the payload size */
 	int32_t payloadSize = static_cast<int32_t>(sizeof(SFileInfo) + strlen(fileName) + 1);
 	m_command.m_size = payloadSize;
 
 	if (sendCommand())
 	{
-		// Allocate an SFileInfo structure of a size large enough to hold the file's name
+		/* Allocate an SFileInfo structure of a size large enough to hold the file's name */
 		struct SFileInfo *fileInfo = reinterpret_cast<struct SFileInfo *>(new unsigned char [payloadSize]);
 
-		// And initialise it with the file's name and timestamp
+		/* And initialise it with the file's name and timestamp */
 		fileInfo->m_microseconds = entry.iModified.Int64();
 		SWAP64(&fileInfo->m_microseconds);
 		strcpy(fileInfo->m_fileName, fileName);

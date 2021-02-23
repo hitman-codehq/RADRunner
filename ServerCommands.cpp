@@ -61,8 +61,8 @@ void CExecute::execute()
 	}
 	else if (result != 0)
 	{
-		// It's a bit crazy but launching behaves differently under Windows, so we have to take this
-		// into account
+		/* It's a bit crazy but launching behaves differently under Windows, so we have to take this */
+		/* into account */
 
 #ifdef WIN32
 
@@ -89,17 +89,17 @@ void CGet::execute()
 {
 	readPayload();
 
-	// Extract the filename from the payload
+	/* Extract the filename from the payload */
 	m_fileName = reinterpret_cast<char *>(m_payload);
 
 	int32_t result;
 	TEntry entry;
 
-	// Determine if the file exists and send the result to the remote client
+	/* Determine if the file exists and send the result to the remote client */
 	result = Utils::GetFileInfo(m_fileName, &entry);
 	m_socket->write(&result, sizeof(result));
 
-	// If the file exists then the remote client will be awaiting its transfer, so send it now
+	/* If the file exists then the remote client will be awaiting its transfer, so send it now */
 	if (result  == KErrNone)
 	{
 		sendFile(m_fileName);
@@ -120,7 +120,7 @@ void CSend::execute()
 
 	readPayload();
 
-	// Extract the file's information from the payload
+	/* Extract the file's information from the payload */
 	struct SFileInfo *fileInfo = reinterpret_cast<struct SFileInfo *>(m_payload);
 	SWAP64(&fileInfo->m_microseconds);
 	m_fileName = fileInfo->m_fileName;
@@ -130,8 +130,8 @@ void CSend::execute()
 
 	if (readFile(m_fileName, fileSize) == KErrNone)
 	{
-		// Create a TEntry instance and use the transferred microseconds value to initialise its timestamp
-		// related members, so that it can be used to set the timestamp of the file just received
+		/* Create a TEntry instance and use the transferred microseconds value to initialise its timestamp */
+		/* related members, so that it can be used to set the timestamp of the file just received */
 		TEntry entry(TDateTime(fileInfo->m_microseconds));
 
 		Utils::setFileDate(m_fileName, entry);

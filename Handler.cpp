@@ -24,8 +24,8 @@ int CHandler::readFile(const char *a_fileName, uint32_t a_fileSize)
 
 	printf("%s: Transferring file \"%s\" of size %u\n", g_commandNames[m_command.m_command], a_fileName, a_fileSize);
 
-	// The Framework doesn't truncate a file if it already exists, so we have to try and create it first and
-	// if it already exists, then open it normally
+	/* The Framework doesn't truncate a file if it already exists, so we have to try and create it first and */
+	/* if it already exists, then open it normally */
 	int retVal = file.Create(a_fileName, EFileWrite);
 
 	if (retVal == KErrAlreadyExists)
@@ -38,7 +38,7 @@ int CHandler::readFile(const char *a_fileName, uint32_t a_fileSize)
 		int bytesRead = 0, bytesToRead, size;
 		unsigned char buffer[1024]; // TODO: CAW
 
-		// Determine the start time so that it can be used to calculate the amount of time the transfer took
+		/* Determine the start time so that it can be used to calculate the amount of time the transfer took */
 		TTime now;
 		now.HomeTime();
 		TInt64 startTime = now.Int64();
@@ -56,12 +56,12 @@ int CHandler::readFile(const char *a_fileName, uint32_t a_fileSize)
 		}
 		while (bytesRead < static_cast<int>(a_fileSize));
 
-		// Determine the end time and the number of milliseconds taken to perform the transfer
+		/* Determine the end time and the number of milliseconds taken to perform the transfer */
 		now.HomeTime();
 		TInt64 endTime = now.Int64();
 		TInt64 total = ((endTime - startTime) / 1000);
 
-		// Cast the time results to integers when printing as Amiga OS doesn't support 64 bit format specifiers
+		/* Cast the time results to integers when printing as Amiga OS doesn't support 64 bit format specifiers */
 		printf("%s: Wrote %d.%d Kilobytes to file \"%s\" in %d.%d seconds\n", g_commandNames[m_command.m_command], (bytesRead / 1024),
 			(bytesRead % 1024), a_fileName, static_cast<int>(total / 1000), static_cast<int>(total % 1000));
 
@@ -88,7 +88,7 @@ bool CHandler::readPayload()
 {
 	bool retVal = true;
 
-	// If the command has a payload, allocate an appropriately sized buffer and read it
+	/* If the command has a payload, allocate an appropriately sized buffer and read it */
 	if (m_command.m_size > 0)
 	{
 		m_payload = new unsigned char[m_command.m_size];
@@ -148,7 +148,7 @@ int CHandler::sendFile(const char *a_fileName)
 
 			if ((retVal = file.open(a_fileName, EFileRead)) == KErrNone)
 			{
-				// Determine the start time so that it can be used to calculate the amount of time the transfer took
+				/* Determine the start time so that it can be used to calculate the amount of time the transfer took */
 				TTime now;
 				now.HomeTime();
 				TInt64 startTime = now.Int64();
@@ -160,12 +160,12 @@ int CHandler::sendFile(const char *a_fileName)
 
 				file.close();
 
-				// Determine the end time and the number of milliseconds taken to perform the transfer
+				/* Determine the end time and the number of milliseconds taken to perform the transfer */
 				now.HomeTime();
 				TInt64 endTime = now.Int64();
 				TInt64 total = ((endTime - startTime) / 1000);
 
-				// Cast the time results to integers when printing as Amiga OS doesn't support 64 bit format specifiers
+				/* Cast the time results to integers when printing as Amiga OS doesn't support 64 bit format specifiers */
 				printf("%s: Transferred %u.%u Kilobytes in %d.%d seconds\n", g_commandNames[m_command.m_command], (entry.iSize / 1024),
 					(entry.iSize % 1024), static_cast<int>(total / 1000), static_cast<int>(total % 1000));
 			}
