@@ -21,7 +21,9 @@
 
 void CExecute::execute()
 {
-	int result;
+	struct SResponse response;
+
+	response.m_size = 0;
 
 	readPayload();
 
@@ -29,48 +31,50 @@ void CExecute::execute()
 
 #ifdef WIN32
 
-	result = launchCommand(reinterpret_cast<char *>(m_payload));
+	response.m_result = launchCommand(reinterpret_cast<char *>(m_payload));
 
 	/* Write a failure completion code, to let the client know that it should not listen for the */
 	/* command output to be streamed */
-	if (result != KErrNone)
+	if (response.m_result != KErrNone)
 	{
-		m_socket->write(&result, sizeof(result));
+		SWAP(&response.m_result);
+		m_socket->write(&response, sizeof(response));
 	}
 
 #else /* ! WIN32 */
 
-	result = system(reinterpret_cast<const char *>(m_payload));
+	response.m_result = system(reinterpret_cast<const char *>(m_payload));
 
 	/* Write the completion code, to let the client know whether it should listen for the command */
 	/* output to be streamed */
-	m_socket->write(&result, sizeof(result));
+	SWAP(&response.m_result);
+	m_socket->write(&response, sizeof(response));
 
 #endif /* ! WIN32 */
 
 	/* If the client was launched successfully then send two NULL terminators in a row.  This is the */
 	/* signal to the client that the stdout output stream has ended */
-	if (result == KErrNone)
+	if (response.m_result == KErrNone)
 	{
 		char terminators[2] = { 0, 0 };
 		m_socket->write(terminators, sizeof(terminators));
 	}
-	else if ((result == -1) || (result == 127))
+	else if ((response.m_result == -1) || (response.m_result == 127))
 	{
 		printf("execute: Unable to launch command\n");
 	}
-	else if (result != 0)
+	else if (response.m_result != 0)
 	{
 		/* It's a bit crazy but launching behaves differently under Windows, so we have to take this */
 		/* into account */
 
 #ifdef WIN32
 
-		printf("execute: Command failed, return code = %d\n", result);
+		printf("execute: Command failed, return code = %d\n", response.m_result);
 
 #else /* WIN32 */
 
-		printf("execute: Command failed, return code = %d\n", WEXITSTATUS(result));
+		printf("execute: Command failed, return code = %d\n", WEXITSTATUS(response.m_result));
 
 #endif /* WIN32 */
 
@@ -92,15 +96,17 @@ void CGet::execute()
 	/* Extract the filename from the payload */
 	m_fileName = reinterpret_cast<char *>(m_payload);
 
-	int32_t result;
+	struct SResponse response;
 	TEntry entry;
 
 	/* Determine if the file exists and send the result to the remote client */
-	result = Utils::GetFileInfo(m_fileName, &entry);
-	m_socket->write(&result, sizeof(result));
+	response.m_result = Utils::GetFileInfo(m_fileName, &entry);
+	SWAP(&response.m_result);
+	response.m_size = 0;
+	m_socket->write(&response, sizeof(response));
 
 	/* If the file exists then the remote client will be awaiting its transfer, so send it now */
-	if (result  == KErrNone)
+	if (response.m_result  == KErrNone)
 	{
 		sendFile(m_fileName);
 	}

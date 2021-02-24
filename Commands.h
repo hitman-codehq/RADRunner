@@ -54,6 +54,20 @@ public:
 };
 
 /**
+ * Structure containing the response of a command execution.
+ * A structure used for returning results from the execution of a command.  The structure uses fixed sized integers,
+ * for compatibility across different CPU architectures.  It is the responsibility of the code using this structure
+ * to perform byte order swapping as appropriate, and to send or receive the payload.  Only the size of the payload
+ * is sent with this structure.
+ */
+
+struct SResponse
+{
+	int32_t		m_result;	/**< The result of attempting to execute the command */
+	uint32_t	m_size;		/**< Size in bytes of payload after structure */
+};
+
+/**
  * Structure containing information about file being transferred.
  * Contains information such as a file's name and its timestamp, to be transferred as the header of any file
  * that is tranferred between hosts.  Instances of this structure are dynamically allocated, with their size

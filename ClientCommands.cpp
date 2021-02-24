@@ -35,12 +35,14 @@ void CExecute::sendRequest()
 		if (m_socket->write(m_fileName, payloadSize) == payloadSize)
 		{
 			int size;
-			int32_t result;
+			struct SResponse response;
 
-			/* Read the response to the request and if it was successful, transfer the file */
-			if ((size = m_socket->read(&result, (sizeof(result)))) > 0)
+			/* Read the response to the request and if it was successful, stream the response data */
+			if ((size = m_socket->read(&response, (sizeof(response)))) == sizeof(response))
 			{
-				if (result == KErrNone)
+				SWAP(&response.m_result);
+
+				if (response.m_result == KErrNone)
 				{
 					bool done = false;
 					char *buffer = new char[STDOUT_BUFFER_SIZE];
@@ -80,7 +82,7 @@ void CExecute::sendRequest()
 				}
 				else
 				{
-						Utils::Error("Received invalid response %d", result);
+					Utils::Error("Received invalid response %d", response.m_result);
 				}
 			}
 			else
@@ -112,7 +114,6 @@ void CGet::sendRequest()
 {
 	int size;
 	int32_t payloadSize = static_cast<int32_t>(strlen(m_fileName) + 1);
-	int32_t result;
 
 	printf("get: Requesting file \"%s\"\n", m_fileName);
 
@@ -122,10 +123,14 @@ void CGet::sendRequest()
 	{
 		if (m_socket->write(m_fileName, payloadSize) == payloadSize)
 		{
+			struct SResponse response;
+
 			/* Read the response to the request and if it was successful, transfer the file */
-			if ((size = m_socket->read(&result, (sizeof(result)))) > 0)
+			if ((size = m_socket->read(&response, (sizeof(response)))) == sizeof(response))
 			{
-				if (result == KErrNone)
+				SWAP(&response.m_result);
+
+				if (response.m_result == KErrNone)
 				{
 					uint32_t totalSize;
 
@@ -138,7 +143,7 @@ void CGet::sendRequest()
 				}
 				else
 				{
-					Utils::Error("Received invalid response %d", result);
+					Utils::Error("Received invalid response %d", response.m_result);
 				}
 			}
 			else

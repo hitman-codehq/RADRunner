@@ -40,12 +40,17 @@ int CExecute::launchCommand(char *commandName)
 					if ((retVal = createChildProcess(commandName)) == 0)
 					{
 						char *buffer = new char[STDOUT_BUFFER_SIZE];
+						struct SResponse response;
 						BOOL success;
 						DWORD bytesRead;
 
 						/* Write a successful completion code, to let the client know that it should listen for the */
 						/* command output to be streamed */
-						m_socket->write(&retVal, sizeof(retVal));
+						response.m_result = retVal;
+						SWAP(&response.m_result);
+						response.m_size = 0;
+
+						m_socket->write(&response, sizeof(response));
 
 						/* Loop around and read as much from the child's stdout as possible.  When the child exits, */
 						/* the pipe will be closed and ReadFile() will fail */
