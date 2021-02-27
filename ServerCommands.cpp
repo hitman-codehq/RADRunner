@@ -134,25 +134,11 @@ void CSend::execute()
 	m_socket->read(&fileSize, sizeof(fileSize));
 	SWAP(&fileSize);
 
+	/* Read the file from the remote client */
 	if (readFile(m_fileName, fileSize) == KErrNone)
 	{
-		/* Create a TEntry instance and use the transferred microseconds value to initialise its timestamp */
-		/* related members, so that it can be used to set the timestamp of the file just received */
-		TEntry entry(TDateTime(fileInfo->m_microseconds));
-
-		Utils::setFileDate(m_fileName, entry);
-
-#ifdef __amigaos__
-
-		Utils::setProtection(m_fileName, 0);
-
-#elif defined(__unix__)
-
-		// TODO: CAW - Error checking + these need to be abstracted and passed as a part of the message
-		Utils::setProtection(m_fileName, (S_IXUSR | S_IXGRP | S_IXOTH | S_IRUSR | S_IRGRP | S_IROTH | S_IWUSR));
-
-#endif /* __unix__ */
-
+		/* And set its datestamp and protection bits */
+		setFileInformation(*fileInfo);
 	}
 }
 

@@ -186,3 +186,46 @@ int CHandler::sendFile(const char *a_fileName)
 
 	return retVal;
 }
+
+/**
+ * Sets the datestamp and protection bits for a file.
+ * Using the information in the SFileInfo structure passed in, this method will update the datestamp and
+ * protection bits on a file, whose name is also stored in said structure.
+ *
+ * @date	Saturday 27-Feb-2021 7:25 am, Code HQ Bergmannstrasse
+ * @param	a_fileInfo		Structure containing information about the file
+ */
+
+void CHandler::setFileInformation(const SFileInfo &a_fileInfo)
+{
+	int result;
+
+	/* Create a TEntry instance and use the given microseconds value to initialise its timestamp */
+	/* related members, so that it can be used to set the timestamp of the file just received */
+	TEntry entry(TDateTime(a_fileInfo.m_microseconds));
+
+	if ((result = Utils::setFileDate(a_fileInfo.m_fileName, entry)) != KErrNone)
+	{
+		Utils::Error("Unable to set datestamp on file \"%s\" (Error %d)", a_fileInfo.m_fileName, result);
+	}
+
+#ifdef __amigaos__
+
+	result = Utils::setProtection(a_fileInfo.m_fileName, 0);
+
+#elif defined(__unix__)
+
+	// TODO: CAW - These need to be abstracted and passed as a part of the message
+	result = Utils::setProtection(a_fileInfo.m_fileName, (S_IXUSR | S_IXGRP | S_IXOTH | S_IRUSR | S_IRGRP | S_IROTH | S_IWUSR));
+
+#else /* ! __unix__ */
+
+	result = KErrNone;
+
+#endif /* ! __unix__ */
+
+	if (result != KErrNone)
+	{
+		Utils::Error("Unable to set protection bits for file \"%s\" (Error %d)", a_fileInfo.m_fileName, result);
+	}
+}

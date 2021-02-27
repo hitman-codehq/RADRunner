@@ -104,6 +104,8 @@ protected:
 
 	int sendFile(const char *a_fileName);
 
+	void setFileInformation(const SFileInfo &a_fileInfo);
+
 public:
 
 	/** Constructor to be used when creating client instances */
