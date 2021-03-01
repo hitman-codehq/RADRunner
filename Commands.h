@@ -90,15 +90,19 @@ class CHandler
 {
 protected:
 
-	RSocket			*m_socket;	/**< Socket on which to process the command */
-	SCommand		m_command;	/**< Basic command structure to be processed */
-	unsigned char	*m_payload;	/**< Buffer containing packet's payload, if any */
+	RSocket			*m_socket;			/**< Socket on which to process the command */
+	SCommand		m_command;			/**< Command to be sent to the remote server */
+	SResponse		m_response;			/**< Response from the remote server */
+	unsigned char	*m_payload;			/**< Buffer containing packet's payload, if any (server) */
+	unsigned char	*m_responsePayload;	/**< Buffer containing response's payload, if any (client) */
 
 protected:
 
 	int readFile(const char *a_fileName);
 
 	bool readPayload();
+
+	bool readResponse();
 
 	bool sendCommand();
 
@@ -120,6 +124,7 @@ public:
 	virtual ~CHandler()
 	{
 		delete [] m_payload;
+		delete [] m_responsePayload;
 	}
 
 	/** Method for executing the handler on the server */

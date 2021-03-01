@@ -84,6 +84,9 @@ int CHandler::readFile(const char *a_fileName)
  * A convenience method that will allocate memory for the command's payload, and read the payload into that
  * memory.  If the command has no payload, no action will be performed but success will still be returned.
  *
+ * @pre		A command has been received from the connected client
+ * @pre		The socket is open
+ *
  * @date	Sunday 10-Jan-2021 6:39 am, Code HQ Bergmannstrasse
  * @return	true if the payload was read successfully, else false
  */
@@ -97,6 +100,43 @@ bool CHandler::readPayload()
 	{
 		m_payload = new unsigned char[m_command.m_size];
 		retVal = (m_socket->read(m_payload, m_command.m_size) == static_cast<int>(m_command.m_size));
+	}
+
+	return retVal;
+}
+
+/**
+ * Reads the response's payload.
+ * A convenience method that will allocate memory for the response's payload, and read the payload into that
+ * memory.  If the response has no payload, no action will be performed but success will still be returned.
+ *
+ * @pre		A command has been sent to the connected server
+ * @pre		The socket is open
+ *
+ * @date	Saturday 27-Feb-2021 2:34 pm, Code HQ Bergmannstrasse
+ * @return	true if the payload was read successfully, else false
+ */
+
+bool CHandler::readResponse()
+{
+	bool retVal = false;
+
+	/* Read the response to the request */
+	if (m_socket->read(&m_response, sizeof(m_response)) == sizeof(m_response))
+	{
+		SWAP(&m_response.m_result);
+		SWAP(&m_response.m_size);
+
+		/* If the response has a payload, allocate an appropriately sized buffer and read it */
+		if (m_response.m_size > 0)
+		{
+			m_responsePayload = new unsigned char[m_response.m_size];
+			retVal = (m_socket->read(m_responsePayload, m_response.m_size) == static_cast<int>(m_response.m_size));
+		}
+		else
+		{
+			retVal = true;
+		}
 	}
 
 	return retVal;

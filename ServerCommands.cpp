@@ -1,6 +1,7 @@
 
 #include <StdFuncs.h>
 #include <File.h>
+#include <string.h>
 #include "Commands.h"
 #include "StdSocket.h"
 #include <sys/stat.h>
@@ -96,14 +97,47 @@ void CGet::execute()
 	/* Extract the filename from the payload */
 	m_fileName = reinterpret_cast<char *>(m_payload);
 
+	int result;
 	struct SResponse response;
 	TEntry entry;
 
 	/* Determine if the file exists and send the result to the remote client */
-	response.m_result = Utils::GetFileInfo(m_fileName, &entry);
+	result = response.m_result = Utils::GetFileInfo(m_fileName, &entry);
 	SWAP(&response.m_result);
-	response.m_size = 0;
-	m_socket->write(&response, sizeof(response));
+
+	/* If the file exists then send a response and a payload, containing the file's timestamp */
+	if (result == KErrNone)
+	{
+		/* Strip any path component from the file as we want it to be written to the current directory */
+		/* in the destination */
+		const char *fileName = Utils::filePart(m_fileName);
+
+		/* Include the size of just the filename in the payload size */
+		int32_t payloadSize = static_cast<int32_t>(sizeof(SFileInfo) + strlen(fileName) + 1);
+
+		/* Allocate an SFileInfo structure of a size large enough to hold the file's name */
+		struct SFileInfo *fileInfo = reinterpret_cast<struct SFileInfo *>(new unsigned char [payloadSize]);
+
+		/* Initialise it with the file's name and timestamp */
+		fileInfo->m_microseconds = entry.iModified.Int64();
+		SWAP64(&fileInfo->m_microseconds);
+		strcpy(fileInfo->m_fileName, fileName);
+
+		/* And finally send the response and its payload */
+		response.m_size = payloadSize;
+		SWAP(&response.m_size);
+
+		m_socket->write(&response, sizeof(response));
+		m_socket->write(fileInfo, payloadSize);
+
+		delete [] reinterpret_cast<unsigned char *>(fileInfo);
+	}
+	/* Otherwise just send a response with an empty payload */
+	else
+	{
+		response.m_size = 0;
+		m_socket->write(&response, sizeof(response));
+	}
 
 	/* If the file exists then the remote client will be awaiting its transfer, so send it now */
 	if (response.m_result  == KErrNone)
@@ -129,7 +163,7 @@ void CSend::execute()
 	SWAP64(&fileInfo->m_microseconds);
 	m_fileName = fileInfo->m_fileName;
 
-	/* Read the file from the remote client */
+	/* Transfer the file from the remote client */
 	if (readFile(m_fileName) == KErrNone)
 	{
 		/* And set its datestamp and protection bits */

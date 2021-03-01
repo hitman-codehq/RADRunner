@@ -112,7 +112,6 @@ void CExecute::sendRequest()
 
 void CGet::sendRequest()
 {
-	int size;
 	int32_t payloadSize = static_cast<int32_t>(strlen(m_fileName) + 1);
 
 	printf("get: Requesting file \"%s\"\n", m_fileName);
@@ -123,22 +122,24 @@ void CGet::sendRequest()
 	{
 		if (m_socket->write(m_fileName, payloadSize) == payloadSize)
 		{
-			struct SResponse response;
-
-			/* Read the response to the request and if it was successful, transfer the file */
-			if ((size = m_socket->read(&response, (sizeof(response)))) == sizeof(response))
+			if (readResponse())
 			{
-				SWAP(&response.m_result);
-
-				if (response.m_result == KErrNone)
+				if (m_response.m_result == KErrNone)
 				{
-					/* Transfer the file from the remote server, stripping any path present in its name, and */
-					/* store it in the current directory */
-					readFile(Utils::filePart(m_fileName));
+					/* Extract the file's information from the payload */
+					struct SFileInfo *fileInfo = reinterpret_cast<struct SFileInfo *>(m_responsePayload);
+					SWAP64(&fileInfo->m_microseconds);
+
+					/* Transfer the file from the remote server */
+					if (readFile(fileInfo->m_fileName) == KErrNone)
+					{
+						/* And set its datestamp and protection bits */
+						setFileInformation(*fileInfo);
+					}
 				}
 				else
 				{
-					Utils::Error("Received invalid response %d", response.m_result);
+					Utils::Error("Received invalid response %d", m_response.m_result);
 				}
 			}
 			else
@@ -192,7 +193,7 @@ void CSend::sendRequest()
 	/* in the destination */
 	const char *fileName = Utils::filePart(m_fileName);
 
-	/* Send the size of just the filename as the payload size */
+	/* Include the size of just the filename in the payload size */
 	int32_t payloadSize = static_cast<int32_t>(sizeof(SFileInfo) + strlen(fileName) + 1);
 	m_command.m_size = payloadSize;
 
@@ -201,11 +202,12 @@ void CSend::sendRequest()
 		/* Allocate an SFileInfo structure of a size large enough to hold the file's name */
 		struct SFileInfo *fileInfo = reinterpret_cast<struct SFileInfo *>(new unsigned char [payloadSize]);
 
-		/* And initialise it with the file's name and timestamp */
+		/* Initialise it with the file's name and timestamp */
 		fileInfo->m_microseconds = entry.iModified.Int64();
 		SWAP64(&fileInfo->m_microseconds);
 		strcpy(fileInfo->m_fileName, fileName);
 
+		/* And finally send the payload and the file itself */
 		if (m_socket->write(fileInfo, payloadSize) == payloadSize)
 		{
 			sendFile(m_fileName);
