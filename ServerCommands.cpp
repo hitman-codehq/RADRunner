@@ -122,8 +122,6 @@ void CGet::execute()
 
 void CSend::execute()
 {
-	uint32_t fileSize;
-
 	readPayload();
 
 	/* Extract the file's information from the payload */
@@ -131,11 +129,8 @@ void CSend::execute()
 	SWAP64(&fileInfo->m_microseconds);
 	m_fileName = fileInfo->m_fileName;
 
-	m_socket->read(&fileSize, sizeof(fileSize));
-	SWAP(&fileSize);
-
 	/* Read the file from the remote client */
-	if (readFile(m_fileName, fileSize) == KErrNone)
+	if (readFile(m_fileName) == KErrNone)
 	{
 		/* And set its datestamp and protection bits */
 		setFileInformation(*fileInfo);

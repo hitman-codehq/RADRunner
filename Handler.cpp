@@ -14,15 +14,18 @@
  *
  * @date	Sunday 17-Jan-2021 5:39 am, Code HQ Bergmannstrasse
  * @param	a_fileName		The name of the local file into which to write the file's contents
- * @param	a_fileSize		The size of the file in bytes
  * @return	KErrNone if successful, else one of the system errors
  */
 
-int CHandler::readFile(const char *a_fileName, uint32_t a_fileSize)
+int CHandler::readFile(const char *a_fileName)
 {
+	uint32_t fileSize;
 	RFile file;
 
-	printf("%s: Transferring file \"%s\" of size %u\n", g_commandNames[m_command.m_command], a_fileName, a_fileSize);
+	m_socket->read(&fileSize, sizeof(fileSize));
+	SWAP(&fileSize);
+
+	printf("%s: Transferring file \"%s\" of size %u\n", g_commandNames[m_command.m_command], a_fileName, fileSize);
 
 	/* The Framework doesn't truncate a file if it already exists, so we have to try and create it first and */
 	/* if it already exists, then open it normally */
@@ -45,7 +48,7 @@ int CHandler::readFile(const char *a_fileName, uint32_t a_fileSize)
 
 		do
 		{
-			bytesToRead = ((a_fileSize - bytesRead) >= sizeof(buffer)) ? sizeof(buffer) : (a_fileSize - bytesRead);
+			bytesToRead = ((fileSize - bytesRead) >= sizeof(buffer)) ? sizeof(buffer) : (fileSize - bytesRead);
 			size = m_socket->read(buffer, bytesToRead);
 
 			if (size > 0)
@@ -54,7 +57,7 @@ int CHandler::readFile(const char *a_fileName, uint32_t a_fileSize)
 				bytesRead += size;
 			}
 		}
-		while (bytesRead < static_cast<int>(a_fileSize));
+		while (bytesRead < static_cast<int>(fileSize));
 
 		/* Determine the end time and the number of milliseconds taken to perform the transfer */
 		now.HomeTime();
@@ -131,7 +134,7 @@ bool CHandler::sendCommand()
 int CHandler::sendFile(const char *a_fileName)
 {
 	unsigned char buffer[1024]; // TODO: CAW
-	int retVal, totalSize;
+	int retVal, fileSize;
 	size_t size;
 	TEntry entry;
 
@@ -139,10 +142,10 @@ int CHandler::sendFile(const char *a_fileName)
 
 	if ((retVal = Utils::GetFileInfo(a_fileName, &entry)) == KErrNone)
 	{
-		totalSize = entry.iSize;
-		SWAP(reinterpret_cast<unsigned int *>(&totalSize));
+		fileSize = entry.iSize;
+		SWAP(&fileSize);
 
-		if (m_socket->write(&totalSize, sizeof(totalSize)) == sizeof(totalSize))
+		if (m_socket->write(&fileSize, sizeof(fileSize)) == sizeof(fileSize))
 		{
 			RFile file;
 

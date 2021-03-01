@@ -132,14 +132,9 @@ void CGet::sendRequest()
 
 				if (response.m_result == KErrNone)
 				{
-					uint32_t totalSize;
-
-					m_socket->read(&totalSize, sizeof(totalSize));
-					SWAP(&totalSize);
-
 					/* Transfer the file from the remote server, stripping any path present in its name, and */
 					/* store it in the current directory */
-					readFile(Utils::filePart(m_fileName), totalSize);
+					readFile(Utils::filePart(m_fileName));
 				}
 				else
 				{

@@ -96,7 +96,7 @@ protected:
 
 protected:
 
-	int readFile(const char *a_fileName, uint32_t a_fileSize);
+	int readFile(const char *a_fileName);
 
 	bool readPayload();
 
