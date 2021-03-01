@@ -102,8 +102,9 @@ void ProcessScript(const char *a_scriptName)
 
 				const char *argumentToken = tokens.NextToken(&length);
 
-				/* If it is a comment character then ignore it and continue to the next line */
-				if (command == "#")
+				/* If it is a comment character then continue to the next line.  We check for the character being */
+				/* '#' rather than the entire string, to enable comments with no space after the '#' character */
+				if (command[0] == '#')
 				{
 					continue;
 				}
