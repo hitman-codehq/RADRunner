@@ -1,6 +1,7 @@
 
 #include <StdFuncs.h>
 #include <File.h>
+#include <sys/stat.h>
 #include "Commands.h"
 #include "StdSocket.h"
 
