@@ -40,7 +40,7 @@ int CExecute::launchCommand(char *commandName)
 					if ((retVal = createChildProcess(commandName)) == 0)
 					{
 						char *buffer = new char[STDOUT_BUFFER_SIZE];
-						struct SResponse response;
+						SResponse response;
 						BOOL success;
 						DWORD bytesRead;
 

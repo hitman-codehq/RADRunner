@@ -35,7 +35,7 @@ void CExecute::sendRequest()
 		if (m_socket->write(m_fileName, payloadSize) == payloadSize)
 		{
 			int size;
-			struct SResponse response;
+			SResponse response;
 
 			/* Read the response to the request and if it was successful, stream the response data */
 			if ((size = m_socket->read(&response, (sizeof(response)))) == sizeof(response))
@@ -127,7 +127,7 @@ void CGet::sendRequest()
 				if (m_response.m_result == KErrNone)
 				{
 					/* Extract the file's information from the payload */
-					struct SFileInfo *fileInfo = reinterpret_cast<struct SFileInfo *>(m_responsePayload);
+					SFileInfo *fileInfo = reinterpret_cast<SFileInfo *>(m_responsePayload);
 					SWAP64(&fileInfo->m_microseconds);
 
 					/* Transfer the file from the remote server */
@@ -200,7 +200,7 @@ void CSend::sendRequest()
 	if (sendCommand())
 	{
 		/* Allocate an SFileInfo structure of a size large enough to hold the file's name */
-		struct SFileInfo *fileInfo = reinterpret_cast<struct SFileInfo *>(new unsigned char [payloadSize]);
+		SFileInfo *fileInfo = reinterpret_cast<SFileInfo *>(new unsigned char [payloadSize]);
 
 		/* Initialise it with the file's name and timestamp */
 		fileInfo->m_microseconds = entry.iModified.Int64();

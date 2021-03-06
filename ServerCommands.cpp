@@ -22,7 +22,7 @@
 
 void CExecute::execute()
 {
-	struct SResponse response;
+	SResponse response;
 
 	response.m_size = 0;
 
@@ -98,7 +98,7 @@ void CGet::execute()
 	m_fileName = reinterpret_cast<char *>(m_payload);
 
 	int result;
-	struct SResponse response;
+	SResponse response;
 	TEntry entry;
 
 	/* Determine if the file exists and send the result to the remote client */
@@ -116,7 +116,7 @@ void CGet::execute()
 		int32_t payloadSize = static_cast<int32_t>(sizeof(SFileInfo) + strlen(fileName) + 1);
 
 		/* Allocate an SFileInfo structure of a size large enough to hold the file's name */
-		struct SFileInfo *fileInfo = reinterpret_cast<struct SFileInfo *>(new unsigned char [payloadSize]);
+		SFileInfo *fileInfo = reinterpret_cast<SFileInfo *>(new unsigned char [payloadSize]);
 
 		/* Initialise it with the file's name and timestamp */
 		fileInfo->m_microseconds = entry.iModified.Int64();
@@ -159,7 +159,7 @@ void CSend::execute()
 	readPayload();
 
 	/* Extract the file's information from the payload */
-	struct SFileInfo *fileInfo = reinterpret_cast<struct SFileInfo *>(m_payload);
+	SFileInfo *fileInfo = reinterpret_cast<SFileInfo *>(m_payload);
 	SWAP64(&fileInfo->m_microseconds);
 	m_fileName = fileInfo->m_fileName;
 

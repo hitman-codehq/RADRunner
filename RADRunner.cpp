@@ -180,7 +180,7 @@ void StartServer()
 {
 	bool disconnect, shutdown;
 	int result, selectResult, size;
-	struct SCommand command;
+	SCommand command;
 	fd_set socketSet;
 
 	printf("Starting RADRunner server\n");
