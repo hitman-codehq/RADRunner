@@ -5,6 +5,9 @@
 #include "Commands.h"
 #include "StdSocket.h"
 
+/* Number of bytes to be transferred per call to read() or write() */
+#define TRANSFER_SIZE 1024
+
 /**
  * Reads a file from a connected socket.
  * A convenience method used to read a file from a socket and to write its contents to a local file in
@@ -40,7 +43,7 @@ int CHandler::readFile(const char *a_fileName)
 	if (retVal == KErrNone)
 	{
 		int bytesRead = 0, bytesToRead, size;
-		unsigned char buffer[1024]; // TODO: CAW
+		unsigned char *buffer = new unsigned char[TRANSFER_SIZE];
 
 		/* Determine the start time so that it can be used to calculate the amount of time the transfer took */
 		TTime now;
@@ -49,7 +52,7 @@ int CHandler::readFile(const char *a_fileName)
 
 		do
 		{
-			bytesToRead = ((fileSize - bytesRead) >= sizeof(buffer)) ? sizeof(buffer) : (fileSize - bytesRead);
+			bytesToRead = ((fileSize - bytesRead) >= TRANSFER_SIZE) ? TRANSFER_SIZE : (fileSize - bytesRead);
 			size = m_socket->read(buffer, bytesToRead);
 
 			if (size > 0)
@@ -69,6 +72,7 @@ int CHandler::readFile(const char *a_fileName)
 		printf("%s: Wrote %d.%d Kilobytes to file \"%s\" in %d.%d seconds\n", g_commandNames[m_command.m_command], (bytesRead / 1024),
 			(bytesRead % 1024), a_fileName, static_cast<int>(total / 1000), static_cast<int>(total % 1000));
 
+		delete [] buffer;
 		file.close();
 	}
 	else
@@ -174,16 +178,14 @@ bool CHandler::sendCommand()
 
 int CHandler::sendFile(const char *a_fileName)
 {
-	unsigned char buffer[1024]; // TODO: CAW
-	int retVal, fileSize;
-	size_t size;
+	int retVal;
 	TEntry entry;
 
 	printf("%s: Transferring file \"%s\"\n", g_commandNames[m_command.m_command], a_fileName);
 
 	if ((retVal = Utils::GetFileInfo(a_fileName, &entry)) == KErrNone)
 	{
-		fileSize = entry.iSize;
+		int fileSize = entry.iSize;
 		SWAP(&fileSize);
 
 		if (m_socket->write(&fileSize, sizeof(fileSize)) == sizeof(fileSize))
@@ -192,12 +194,15 @@ int CHandler::sendFile(const char *a_fileName)
 
 			if ((retVal = file.open(a_fileName, EFileRead)) == KErrNone)
 			{
+				unsigned char *buffer = new unsigned char[TRANSFER_SIZE];
+				size_t size;
+
 				/* Determine the start time so that it can be used to calculate the amount of time the transfer took */
 				TTime now;
 				now.HomeTime();
 				TInt64 startTime = now.Int64();
 
-				while ((size = file.read(buffer, sizeof(buffer))) > 0)
+				while ((size = file.read(buffer, TRANSFER_SIZE)) > 0)
 				{
 					m_socket->write(buffer, static_cast<int>(size));
 				}
@@ -212,6 +217,8 @@ int CHandler::sendFile(const char *a_fileName)
 				/* Cast the time results to integers when printing as Amiga OS doesn't support 64 bit format specifiers */
 				printf("%s: Transferred %u.%u Kilobytes in %d.%d seconds\n", g_commandNames[m_command.m_command], (entry.iSize / 1024),
 					(entry.iSize % 1024), static_cast<int>(total / 1000), static_cast<int>(total % 1000));
+
+				delete [] buffer;
 			}
 			else
 			{
@@ -259,7 +266,6 @@ void CHandler::setFileInformation(const SFileInfo &a_fileInfo)
 
 #elif defined(__unix__)
 
-	// TODO: CAW - These need to be abstracted and passed as a part of the message
 	result = Utils::setProtection(a_fileInfo.m_fileName, (S_IXUSR | S_IXGRP | S_IXOTH | S_IRUSR | S_IRGRP | S_IROTH | S_IWUSR));
 
 #else /* ! __unix__ */
