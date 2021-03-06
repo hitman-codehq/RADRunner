@@ -179,24 +179,57 @@ int RSocket::listen(short a_sPort)
 
 /**
  * Reads data from the socket.
- * Reads the number of bytes requested from the socket.
+ * Reads the number of bytes requested from the socket.  This method can operated in a "read all" mode and
+ * a "read waiting" mode, as specified by the a_bReadAll parameter.  If this is specified as true then the
+ * entire number of bytes specified by a_iSize will be read, even if this involves blocking.  If this is
+ * false then only the number of bytes waiting on the socket will be read.
  *
  * @pre		The socket has been opened with open()
  *
  * @date	Saturday 11-Feb-2017 5:59 pm, Code HQ Habersaathstrasse
  * @param	a_pvBuffer		Pointer to the buffer into which to read the data
  * @param	a_iSize			The number of bytes to be read
- * @return	The number of bytes received, or -1 if an error occurred
+ * @param	a_bReadAll		true to read entire number of bytes specified
+ * @return	The number of bytes received, -1 if an error occurred or 0 if socket was closed
  */
 
-int RSocket::read(void *a_pvBuffer, int a_iSize)
+int RSocket::read(void *a_pvBuffer, int a_iSize, bool a_bReadAll)
 {
-	return(recv(m_iSocket, (char *) a_pvBuffer, a_iSize, 0));
+	char *buffer = (char *) a_pvBuffer;
+	int bytesToRead, retVal = 0, size;
+
+	if (a_bReadAll)
+	{
+		/* Loop around, trying to read however many bytes are left to be read, starting with the total number */
+		/* of bytes and gradually reducing the size until all have been read */
+		do
+		{
+			bytesToRead = (a_iSize - retVal);
+
+			if ((size = recv(m_iSocket, (buffer + retVal), bytesToRead, 0)) > 0)
+			{
+				retVal += size;
+			}
+			else
+			{
+				retVal = size;
+				break;
+			}
+		}
+		while (retVal < a_iSize);
+	}
+	else
+	{
+		retVal = recv(m_iSocket, buffer, a_iSize, 0);
+	}
+
+	return retVal;
 }
 
 /**
  * Writes data to the socket.
- * Writes the number of bytes requested to the socket.
+ * Writes the number of bytes requested to the socket.  The entire number of bytes specified by a_iSize
+ * will be written, even if this involves blocking.
  *
  * @pre		The socket has been opened with open()
  *
@@ -208,7 +241,28 @@ int RSocket::read(void *a_pvBuffer, int a_iSize)
 
 int RSocket::write(const void *a_pcvBuffer, int a_iSize)
 {
-	return(send(m_iSocket, (char *) a_pcvBuffer, a_iSize, 0));
+	const char *buffer = (const char *) a_pcvBuffer;
+	int bytesToWrite, retVal = 0, size;
+
+	/* Loop around, trying to write however many bytes are left to be written, starting with the total number */
+	/* of bytes and gradually reducing the size until all have been written */
+	do
+	{
+		bytesToWrite = (a_iSize - retVal);
+
+		if ((size = send(m_iSocket, (buffer + retVal), bytesToWrite, 0)) > 0)
+		{
+			retVal += size;
+		}
+		else
+		{
+			retVal = size;
+			break;
+		}
+	}
+	while (retVal < a_iSize);
+
+	return retVal;
 }
 
 /**

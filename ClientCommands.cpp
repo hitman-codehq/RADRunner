@@ -53,7 +53,7 @@ void CExecute::sendRequest()
 					/* and, when found, break out of the loop */
 					do
 					{
-						if ((bytesRead = m_socket->read(buffer, (STDOUT_BUFFER_SIZE - 1))) > 0)
+						if ((bytesRead = m_socket->read(buffer, (STDOUT_BUFFER_SIZE - 1), false)) > 0)
 						{
 							buffer[bytesRead] = '\0';
 							printf("%s", buffer);

@@ -45,7 +45,7 @@ public:
 
 	int listen(short a_sPort);
 
-	int read(void *a_pvBuffer, int a_iSize);
+	int read(void *a_pvBuffer, int a_iSize, bool a_bReadAll = true);
 
 	int write(const void *a_pcvBuffer, int a_iSize);
 
