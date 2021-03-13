@@ -89,10 +89,9 @@ void ProcessScript(const char *a_scriptName)
 		/* Iterate through the script, reading each line and parsing it */
 		while ((line = script.GetLine()) != nullptr)
 		{
+			const char *commandToken;
 			int length;
 			TLex tokens(line, static_cast<int>(strlen(line)));
-
-			const char *commandToken;
 
 			/* Extract the first token on the line */
 			if ((commandToken = tokens.NextToken(&length)) != nullptr)
@@ -100,7 +99,10 @@ void ProcessScript(const char *a_scriptName)
 				CHandler *handler = nullptr;
 				std::string command(commandToken, length);
 
+				/* Extract the argument token and put it in a string of the precise length returned, to ensure */
+				/* that any trailing " is stripped */
 				const char *argumentToken = tokens.NextToken(&length);
+				std::string argument(argumentToken, length);
 
 				/* If it is a comment character then continue to the next line.  We check for the character being */
 				/* '#' rather than the entire string, to enable comments with no space after the '#' character */
@@ -110,9 +112,9 @@ void ProcessScript(const char *a_scriptName)
 				}
 				else if (command == "execute")
 				{
-					if (argumentToken != nullptr)
+					if (!argument.empty())
 					{
-						handler = new CExecute(&g_socket, argumentToken);
+						handler = new CExecute(&g_socket, argument.c_str());
 					}
 					else
 					{
@@ -121,9 +123,9 @@ void ProcessScript(const char *a_scriptName)
 				}
 				else if (command == "get")
 				{
-					if (argumentToken != nullptr)
+					if (!argument.empty())
 					{
-						handler = new CGet(&g_socket, argumentToken);
+						handler = new CGet(&g_socket, argument.c_str());
 					}
 					else
 					{
@@ -132,9 +134,9 @@ void ProcessScript(const char *a_scriptName)
 				}
 				else if (command == "send")
 				{
-					if (argumentToken != nullptr)
+					if (!argument.empty())
 					{
-						handler = new CSend(&g_socket, argumentToken);
+						handler = new CSend(&g_socket, argument.c_str());
 					}
 					else
 					{
