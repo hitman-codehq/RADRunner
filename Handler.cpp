@@ -1,5 +1,6 @@
 
 #include <StdFuncs.h>
+#include <BaUtils.h>
 #include <File.h>
 #include <sys/stat.h>
 #include "Commands.h"
@@ -31,14 +32,12 @@ int CHandler::readFile(const char *a_fileName)
 
 	printf("%s: Transferring file \"%s\" of size %u\n", g_commandNames[m_command.m_command], a_fileName, fileSize);
 
-	/* The Framework doesn't truncate a file if it already exists, so we have to try and create it first and */
-	/* if it already exists, then open it normally */
-	int retVal = file.Create(a_fileName, EFileWrite);
+	/* The Framework doesn't truncate a file if it already exists, so delete any existing file before continuing */
+	/* to avoid creating non working executables */
+	BaflUtils::deleteFile(a_fileName);
 
-	if (retVal == KErrAlreadyExists)
-	{
-		retVal = file.open(a_fileName, EFileWrite);
-	}
+	/* Now create a new empty file into which to write */
+	int retVal = file.Create(a_fileName, EFileWrite);
 
 	if (retVal == KErrNone)
 	{
