@@ -5,6 +5,7 @@
 #include <StdTextFile.h>
 #include <signal.h>
 #include <string.h>
+#include <vector>
 #include "Commands.h"
 #include "DirWrapper.h"
 #include "StdSocket.h"
@@ -78,31 +79,40 @@ static RSocket g_socket;
 
 void ProcessScript(const char *a_scriptName)
 {
-	RTextFile script;
+	int scriptArgLength;
+	RTextFile scriptFile;
+	TLex scriptArgTokens(a_scriptName, static_cast<int>(strlen(a_scriptName)));
 
-	printf("Parsing script \"%s\"...\n", a_scriptName);
+	/* The first argument is the script name so extract that separately */
+	const char *scriptArgToken = scriptArgTokens.NextToken(&scriptArgLength);
+	std::string script(scriptArgToken, scriptArgLength);
 
-	if (script.open(a_scriptName) == KErrNone)
+	/* Now iterate through the remaining arguments and save them for easy reference later */
+	std::vector<std::string> arguments;
+
+	while ((scriptArgToken = scriptArgTokens.NextToken(&scriptArgLength)) != nullptr)
+	{
+		arguments.push_back(std::string(scriptArgToken, scriptArgLength));
+	}
+
+	printf("Parsing script \"%s\"...\n", script.c_str());
+
+	if (scriptFile.open(script.c_str()) == KErrNone)
 	{
 		const char *line;
 
 		/* Iterate through the script, reading each line and parsing it */
-		while ((line = script.GetLine()) != nullptr)
+		while ((line = scriptFile.GetLine()) != nullptr)
 		{
 			const char *commandToken;
-			int length;
+			int commandLength;
 			TLex tokens(line, static_cast<int>(strlen(line)));
 
 			/* Extract the first token on the line */
-			if ((commandToken = tokens.NextToken(&length)) != nullptr)
+			if ((commandToken = tokens.NextToken(&commandLength)) != nullptr)
 			{
 				CHandler *handler = nullptr;
-				std::string command(commandToken, length);
-
-				/* Extract the argument token and put it in a string of the precise length returned, to ensure */
-				/* that any trailing " is stripped */
-				const char *argumentToken = tokens.NextToken(&length);
-				std::string argument(argumentToken, length);
+				std::string command(commandToken, commandLength);
 
 				/* If it is a comment character then continue to the next line.  We check for the character being */
 				/* '#' rather than the entire string, to enable comments with no space after the '#' character */
@@ -110,7 +120,39 @@ void ProcessScript(const char *a_scriptName)
 				{
 					continue;
 				}
-				else if (command == "execute")
+
+				/* Extract the argument token and put it in a string of the precise length returned, to ensure */
+				/* that any trailing " is stripped */
+				const char *argumentToken = tokens.NextToken(&commandLength);
+				std::string argument(argumentToken, commandLength);
+
+				char variable[] = "$1";
+				size_t offset, variableIndex;
+
+				/* Variables in the range $1 to $9 are accepted, so iterate check whether any of these are present */
+				/* in the argument list and replace them with the matching argument that was passed in on the */
+				/* command line */
+				for (variableIndex = 0; variableIndex < 9; ++variableIndex)
+				{
+					variable[1] = '1' + static_cast<char>(variableIndex);
+
+					/* There may be more than one instance of the variable so search for it in a loop */
+					while ((offset = argument.find(variable)) != std::string::npos)
+					{
+						if (variableIndex < arguments.size())
+						{
+							argument.replace(offset, 2, arguments[variableIndex]);
+						}
+						/* If no argument was passed in for this variable, just treat it was a warning and continue */
+						else
+						{
+							printf("Warning: No argument passed in for variable %s\n", variable);
+							break;
+						}
+					}
+				}
+
+				if (command == "execute")
 				{
 					if (!argument.empty())
 					{
@@ -161,7 +203,7 @@ void ProcessScript(const char *a_scriptName)
 			}
 		}
 
-		script.close();
+		scriptFile.close();
 	}
 	else
 	{
