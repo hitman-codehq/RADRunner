@@ -39,11 +39,11 @@ public:
 		close();
 	}
 
-	int open(const char *a_pccAddress);
+	int open(const char *a_pccAddress, unsigned short a_usPort);
 
 	void close();
 
-	int listen(short a_sPort);
+	int listen(unsigned short a_usPort);
 
 	int read(void *a_pvBuffer, int a_iSize, bool a_bReadAll = true);
 

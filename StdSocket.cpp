@@ -40,12 +40,13 @@ RSocket::RSocket()
  *
  * @date	Saturday 11-Feb-2017 4:37 pm, Code HQ Habersaathstrasse
  * @param	a_pccHost		The name of the host, an IP address or NULL
+ * @param	a_usPort		The port to which to connect
  * @return	KErrNone if successful
  * @return	KErrGeneral if the socket could not be opened
  * @return	KErrHostNotFound if the host could not be resolved
  */
 
-int RSocket::open(const char *a_pccHost)
+int RSocket::open(const char *a_pccHost, unsigned short a_usPort)
 {
 	int RetVal;
 	struct hostent *HostEnt;
@@ -72,7 +73,7 @@ int RSocket::open(const char *a_pccHost)
 					InAddr = (struct in_addr *) HostEnt->h_addr_list[0];
 
 					SockAddr.sin_family = HostEnt->h_addrtype;
-					SockAddr.sin_port = htons(80);
+					SockAddr.sin_port = htons(a_usPort);
 					SockAddr.sin_addr = *InAddr;
 
 					if (connect(m_iSocket, (struct sockaddr *) &SockAddr, sizeof(SockAddr)) >= 0)
@@ -140,11 +141,11 @@ void RSocket::close()
  * @pre		The socket has been opened with open()
  *
  * @date	Sunday 12-Feb-2017 7:53 am, Code HQ Habersaathstrasse
- * @param	a_sPort			The port on which to listen for connections
+ * @param	a_usPort		The port on which to listen for connections
  * @return	KErrNone if successful, else KErrGeneral if host connection failed
  */
 
-int RSocket::listen(short a_sPort)
+int RSocket::listen(unsigned short a_usPort)
 {
 	int RetVal;
 	socklen_t ClientSize;
@@ -154,7 +155,7 @@ int RSocket::listen(short a_sPort)
 	RetVal = KErrGeneral;
 
 	Server.sin_family = AF_INET;
-	Server.sin_port = htons(a_sPort);
+	Server.sin_port = htons(a_usPort);
 	Server.sin_addr.s_addr = INADDR_ANY;
 
 	if (bind(m_iSocket, (struct sockaddr *) &Server, sizeof(Server)) != SOCKET_ERROR)

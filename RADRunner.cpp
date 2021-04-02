@@ -231,7 +231,7 @@ void StartServer()
 
 	do
 	{
-		if ((result = g_socket.open(nullptr)) == KErrNone)
+		if ((result = g_socket.open(nullptr, 80)) == KErrNone)
 		{
 			printf("Listening for a client connection... ");
 			fflush(stdout);
@@ -364,7 +364,7 @@ int main(int a_argc, const char *a_argv[])
 		{
 			if (g_args[ARGS_REMOTE] != nullptr)
 			{
-				if (g_socket.open(g_args[ARGS_REMOTE]) == KErrNone)
+				if (g_socket.open(g_args[ARGS_REMOTE], 80) == KErrNone)
 				{
 					/* Start by checking whether the server's protocol version is supported.  This handler will */
 					/* display an error and exit if it is not */
