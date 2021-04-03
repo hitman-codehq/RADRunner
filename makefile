@@ -1,8 +1,8 @@
 
-CFLAGS = -c -fno-asynchronous-unwind-tables -std=c++14 -Wall -Wextra -Wwrite-strings -DMUNGWALL_NO_LINE_TRACKING
+CFLAGS = -c -fno-asynchronous-unwind-tables -std=gnu++14 -Wall -Wextra -Wwrite-strings -DMUNGWALL_NO_LINE_TRACKING
 IFLAGS = -I../StdFuncs -D__USE_INLINE__
 LFLAGS = -L../StdFuncs/$(OBJ)
-LIBS = -lStdFuncs
+LIBS = -lStdFuncs -lauto
 
 ifdef PREFIX
 	AR = @$(PREFIX)ar
@@ -14,7 +14,6 @@ else
 	CC = @g++
 	LD = @g++
 	STRIP = @strip
-	IFLAGS := -ISDK:NDK_3.9/Include/include_h -ISDK:AHI/Include
 endif
 
 ifdef DEBUG
@@ -31,8 +30,6 @@ ifeq ($(UNAME), CYGWIN_NT-10.0)
 
 CFLAGS += -athread=native
 LFLAGS += -athread=native
-# TODO: CAW - Fix or remove this
-#LIBS += -lauto
 
 else
 
@@ -45,14 +42,14 @@ EXECUTABLE = $(OBJ)/RADRunner
 
 OBJECTS = $(OBJ)/ClientCommands.o $(OBJ)/Handler.o $(OBJ)/RADRunner.o $(OBJ)/ServerCommands.o $(OBJ)/StdSocket.o
 
-All: $(OBJ) $(EXECUTABLE)
+all: $(OBJ) $(EXECUTABLE)
 
 $(OBJ):
 	@mkdir $(OBJ)
 
 $(EXECUTABLE): $(OBJECTS) ../StdFuncs/$(OBJ)/libStdFuncs.a
 	@echo Linking $@...
-	$(LD) $(OBJECTS) $(LFLAGS) $(LIBS) -o $@.debug
+	$(LD) $(LFLAGS) $(OBJECTS) $(LIBS) -o $@.debug
 	$(STRIP) -R.comment $@.debug -o $@
 
 $(OBJ)/%.o: %.cpp
