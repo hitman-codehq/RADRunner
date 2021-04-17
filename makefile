@@ -1,5 +1,5 @@
 
-CFLAGS = -c -fno-asynchronous-unwind-tables -std=gnu++14 -Wall -Wextra -Wwrite-strings -DMUNGWALL_NO_LINE_TRACKING
+CFLAGS = -c -fno-asynchronous-unwind-tables -std=gnu++14 -Wall -Wextra
 IFLAGS = -I../StdFuncs -D__USE_INLINE__
 LFLAGS = -L../StdFuncs/$(OBJ)
 LIBS = -lStdFuncs -lauto
@@ -18,7 +18,7 @@ endif
 
 ifdef DEBUG
 	OBJ = Debug
-	CFLAGS += -ggdb -D_DEBUG
+	CFLAGS += -ggdb -D_DEBUG -DMUNGWALL_NO_LINE_TRACKING
 else
 	OBJ = Release
 	CFLAGS += -O2

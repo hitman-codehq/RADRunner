@@ -5,8 +5,9 @@ project(RADRunner)
 
 if(MSVC)
 	add_compile_definitions(_CRT_SECURE_NO_WARNINGS _WINSOCK_DEPRECATED_NO_WARNINGS)
+	add_compile_options(/EHsc)
 else()
-	add_compile_options(-fno-asynchronous-unwind-tables -fno-strict-aliasing -Wall -Wextra -Wwrite-strings)
+	add_compile_options(-fno-asynchronous-unwind-tables -Wall -Wextra)
 endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
