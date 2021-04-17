@@ -50,8 +50,10 @@ static const char g_accVersion[] = "$VER: RADRunner 0.01 (17.04.2021)";
 
 /* Template for use in obtaining command line parameters.  Remember to change the indexes */
 /* in Scanner.h if the ordering or number of these change */
-
 static const char g_template[] = "REMOTE,EXECUTE/K,GET/K,SCRIPT/K,SEND/K,SERVER/S,SHUTDOWN/S";
+
+/* Signature sent by the client when connecting, to identify it as a RADRunner client */
+static const char g_signature[] = "RADR";
 
 static volatile bool g_break;		/* Set to true if when ctrl-c is hit by the user */
 static RArgs g_args;				/* Contains the parsed command line arguments */
@@ -244,7 +246,20 @@ void StartServer()
 				FD_ZERO(&socketSet);
 				FD_SET(g_socket.m_iSocket, &socketSet);
 
-				do
+				/* Ensure that the client that just connected is a RADRunner client, which will always send a */
+				/* signature as soon as it connects */
+				char clientSignature[4];
+
+				if (g_socket.read(clientSignature, sizeof(clientSignature)) == 4)
+				{
+					if (memcmp(clientSignature, g_signature, 4) != 0)
+					{
+						Utils::Error("Connected client is not an instance of RADRunner, closing connection");
+						disconnect = true;
+					}
+				}
+
+				while (!g_break && !disconnect && !shutdown)
 				{
 					selectResult = select(FD_SETSIZE, &socketSet, nullptr, nullptr, nullptr);
 
@@ -304,7 +319,7 @@ void StartServer()
 						disconnect = true;
 					}
 				}
-				while (!g_break && !disconnect && !shutdown);
+
 			}
 			else
 			{
@@ -365,7 +380,10 @@ int main(int a_argc, const char *a_argv[])
 			{
 				if (g_socket.open(g_args[ARGS_REMOTE], 80) == KErrNone)
 				{
-					/* Start by checking whether the server's protocol version is supported.  This handler will */
+					/* Start by sending a signature, to identify us as a RADRunner client */
+					g_socket.write(g_signature, 4);
+
+					/* And check whether the server's protocol version is supported.  This handler will */
 					/* display an error and exit if it is not */
 					CHandler *handler = new CVersion(&g_socket);
 
