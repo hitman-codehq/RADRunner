@@ -7,7 +7,6 @@
 #include <string.h>
 #include <vector>
 #include "Commands.h"
-#include "DirWrapper.h"
 #include "StdSocket.h"
 
 #ifndef WIN32
