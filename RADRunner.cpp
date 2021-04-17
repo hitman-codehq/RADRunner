@@ -39,15 +39,15 @@ static const struct Resident g_ROMTag __attribute__((used)) =
 	NT_LIBRARY,
 	0,
 	"RADRunner",
-	"\0$VER: RADRunner 0.01 (17.11.2019)\r\n",
+	"\0$VER: RADRunner 0.01 (17.04.2021)\r\n",
 	NULL
 };
 
-/* Use a large stack, as copying is highly recursive and can use a lot of stack space */
+#elif defined(__amigaos__)
 
-static const char __attribute__((used)) g_stackCookie[] = "$STACK:262144";
+static const char g_accVersion[] = "$VER: RADRunner 0.01 (17.04.2021)";
 
-#endif /* __amigaos4__ */
+#endif /* __amigaos__ */
 
 /* Template for use in obtaining command line parameters.  Remember to change the indexes */
 /* in Scanner.h if the ordering or number of these change */
