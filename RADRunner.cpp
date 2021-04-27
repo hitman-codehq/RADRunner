@@ -213,6 +213,78 @@ void ProcessScript(const char *a_scriptName)
 }
 
 /**
+ * Launches RADRunner in client mode.
+ * This method must be executed when RADRunner is launched in client mode.  It will connect to the remote server
+ * specified in the program arguments and then send the commands specified in the program arguments to it.  At
+ * the end of this, it will close the connection to the server.
+ *
+ * @date	Tuesday 27-Apr-2021 6:33 am, Code HQ Bergmannstrasse
+ */
+
+void StartClient()
+{
+	if (g_args[ARGS_REMOTE] != nullptr)
+	{
+		if (g_socket.open(g_args[ARGS_REMOTE], 80) == KErrNone)
+		{
+			/* Start by sending a signature, to identify us as a RADRunner client */
+			g_socket.write(g_signature, 4);
+
+			/* And check whether the server's protocol version is supported.  This handler will */
+			/* display an error and exit if it is not */
+			CHandler *handler = new CVersion(&g_socket);
+
+			handler->sendRequest();
+			delete handler;
+			handler = nullptr;
+
+			if (g_args[ARGS_SCRIPT] != nullptr)
+			{
+				ProcessScript(g_args[ARGS_SCRIPT]);
+			}
+			else
+			{
+				if (g_args[ARGS_EXECUTE] != nullptr)
+				{
+					handler = new CExecute(&g_socket, g_args[ARGS_EXECUTE]);
+				}
+
+				if (g_args[ARGS_GET] != nullptr)
+				{
+					handler = new CGet(&g_socket, g_args[ARGS_GET]);
+				}
+
+				if (g_args[ARGS_SEND] != nullptr)
+				{
+					handler = new CSend(&g_socket, g_args[ARGS_SEND]);
+				}
+
+				if (g_args[ARGS_SHUTDOWN] != nullptr)
+				{
+					handler = new CShutdown(&g_socket);
+				}
+
+				if (handler != nullptr)
+				{
+					handler->sendRequest();
+					delete handler;
+				}
+			}
+
+			g_socket.close();
+		}
+		else
+		{
+			Utils::Error("Cannot connect to %s", g_args[ARGS_REMOTE]);
+		}
+	}
+	else
+	{
+		Utils::Error("REMOTE argument must be specified");
+	}
+}
+
+/**
  * Launches RADRunner in server mode.
  * This method must be executed when RADRunner is launched in server mode.  It will listen on a socket for
  * incoming connections and, when received, will process whatever commands are received from the client.  At
@@ -376,65 +448,7 @@ int main(int a_argc, const char *a_argv[])
 		}
 		else
 		{
-			if (g_args[ARGS_REMOTE] != nullptr)
-			{
-				if (g_socket.open(g_args[ARGS_REMOTE], 80) == KErrNone)
-				{
-					/* Start by sending a signature, to identify us as a RADRunner client */
-					g_socket.write(g_signature, 4);
-
-					/* And check whether the server's protocol version is supported.  This handler will */
-					/* display an error and exit if it is not */
-					CHandler *handler = new CVersion(&g_socket);
-
-					handler->sendRequest();
-					delete handler;
-					handler = nullptr;
-
-					if (g_args[ARGS_SCRIPT] != nullptr)
-					{
-						ProcessScript(g_args[ARGS_SCRIPT]);
-					}
-					else
-					{
-						if (g_args[ARGS_EXECUTE] != nullptr)
-						{
-							handler = new CExecute(&g_socket, g_args[ARGS_EXECUTE]);
-						}
-
-						if (g_args[ARGS_GET] != nullptr)
-						{
-							handler = new CGet(&g_socket, g_args[ARGS_GET]);
-						}
-
-						if (g_args[ARGS_SEND] != nullptr)
-						{
-							handler = new CSend(&g_socket, g_args[ARGS_SEND]);
-						}
-
-						if (g_args[ARGS_SHUTDOWN] != nullptr)
-						{
-							handler = new CShutdown(&g_socket);
-						}
-
-						if (handler != nullptr)
-						{
-							handler->sendRequest();
-							delete handler;
-						}
-					}
-
-					g_socket.close();
-				}
-				else
-				{
-					Utils::Error("Cannot connect to %s", g_args[ARGS_REMOTE]);
-				}
-			}
-			else
-			{
-				Utils::Error("REMOTE argument must be specified");
-			}
+			StartClient();
 		}
 
 		g_args.close();
