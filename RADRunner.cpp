@@ -67,18 +67,17 @@ static void SignalHandler(int /*a_signal*/)
 	g_break = true;
 }
 
-static RSocket g_socket;
-
 /**
  * Processes the given script file and executes its contents.
  * Reads the script file passed in one line at a time and executes each command found.  Lines starting
  * with a # character are considered to be comments and are skipped.
  *
  * @date	Sunday 10-Jan-2021 8:11 am, Code HQ Bergmannstrasse
+ * @param	a_socket		The socket to which to write client commands
  * @param	a_scriptName	Fully qualified path to the script to be parsed
  */
 
-void ProcessScript(const char *a_scriptName)
+void ProcessScript(RSocket &a_socket, const char *a_scriptName)
 {
 	int scriptArgLength;
 	RTextFile scriptFile;
@@ -157,7 +156,7 @@ void ProcessScript(const char *a_scriptName)
 				{
 					if (!argument.empty())
 					{
-						handler = new CExecute(&g_socket, argument.c_str());
+						handler = new CExecute(&a_socket, argument.c_str());
 					}
 					else
 					{
@@ -168,7 +167,7 @@ void ProcessScript(const char *a_scriptName)
 				{
 					if (!argument.empty())
 					{
-						handler = new CGet(&g_socket, argument.c_str());
+						handler = new CGet(&a_socket, argument.c_str());
 					}
 					else
 					{
@@ -179,7 +178,7 @@ void ProcessScript(const char *a_scriptName)
 				{
 					if (!argument.empty())
 					{
-						handler = new CSend(&g_socket, argument.c_str());
+						handler = new CSend(&a_socket, argument.c_str());
 					}
 					else
 					{
@@ -188,7 +187,7 @@ void ProcessScript(const char *a_scriptName)
 				}
 				else if (command == "shutdown")
 				{
-					handler = new CShutdown(&g_socket);
+					handler = new CShutdown(&a_socket);
 				}
 				else
 				{
@@ -223,16 +222,18 @@ void ProcessScript(const char *a_scriptName)
 
 void StartClient()
 {
+	RSocket socket;
+
 	if (g_args[ARGS_REMOTE] != nullptr)
 	{
-		if (g_socket.open(g_args[ARGS_REMOTE], 80) == KErrNone)
+		if (socket.open(g_args[ARGS_REMOTE], 80) == KErrNone)
 		{
 			/* Start by sending a signature, to identify us as a RADRunner client */
-			g_socket.write(g_signature, 4);
+			socket.write(g_signature, 4);
 
 			/* And check whether the server's protocol version is supported.  This handler will */
 			/* display an error and exit if it is not */
-			CHandler *handler = new CVersion(&g_socket);
+			CHandler *handler = new CVersion(&socket);
 
 			handler->sendRequest();
 			delete handler;
@@ -240,28 +241,28 @@ void StartClient()
 
 			if (g_args[ARGS_SCRIPT] != nullptr)
 			{
-				ProcessScript(g_args[ARGS_SCRIPT]);
+				ProcessScript(socket, g_args[ARGS_SCRIPT]);
 			}
 			else
 			{
 				if (g_args[ARGS_EXECUTE] != nullptr)
 				{
-					handler = new CExecute(&g_socket, g_args[ARGS_EXECUTE]);
+					handler = new CExecute(&socket, g_args[ARGS_EXECUTE]);
 				}
 
 				if (g_args[ARGS_GET] != nullptr)
 				{
-					handler = new CGet(&g_socket, g_args[ARGS_GET]);
+					handler = new CGet(&socket, g_args[ARGS_GET]);
 				}
 
 				if (g_args[ARGS_SEND] != nullptr)
 				{
-					handler = new CSend(&g_socket, g_args[ARGS_SEND]);
+					handler = new CSend(&socket, g_args[ARGS_SEND]);
 				}
 
 				if (g_args[ARGS_SHUTDOWN] != nullptr)
 				{
-					handler = new CShutdown(&g_socket);
+					handler = new CShutdown(&socket);
 				}
 
 				if (handler != nullptr)
@@ -271,7 +272,7 @@ void StartClient()
 				}
 			}
 
-			g_socket.close();
+			socket.close();
 		}
 		else
 		{
@@ -297,6 +298,7 @@ void StartServer()
 {
 	bool disconnect, shutdown;
 	int result, selectResult, size;
+	RSocket socket;
 	SCommand command;
 	fd_set socketSet;
 
@@ -304,25 +306,25 @@ void StartServer()
 
 	do
 	{
-		if ((result = g_socket.open(nullptr, 80)) == KErrNone)
+		if ((result = socket.open(nullptr, 80)) == KErrNone)
 		{
 			printf("Listening for a client connection... ");
 			fflush(stdout);
 
-			if ((result = g_socket.listen(80)) == KErrNone)
+			if ((result = socket.listen(80)) == KErrNone)
 			{
 				printf("connected\n");
 
 				disconnect = shutdown = false;
 
 				FD_ZERO(&socketSet);
-				FD_SET(g_socket.m_iSocket, &socketSet);
+				FD_SET(socket.m_iSocket, &socketSet);
 
 				/* Ensure that the client that just connected is a RADRunner client, which will always send a */
 				/* signature as soon as it connects */
 				char clientSignature[4];
 
-				if (g_socket.read(clientSignature, sizeof(clientSignature)) == 4)
+				if (socket.read(clientSignature, sizeof(clientSignature)) == 4)
 				{
 					if (memcmp(clientSignature, g_signature, 4) != 0)
 					{
@@ -337,7 +339,7 @@ void StartServer()
 
 					if (selectResult > 0)
 					{
-						if ((size = g_socket.read(&command, sizeof(command))) > 0)
+						if ((size = socket.read(&command, sizeof(command))) > 0)
 						{
 							SWAP(&command.m_command);
 							SWAP(&command.m_size);
@@ -348,15 +350,15 @@ void StartServer()
 
 							if (command.m_command == EExecute)
 							{
-								handler = new CExecute(&g_socket, command);
+								handler = new CExecute(&socket, command);
 							}
 							else if (command.m_command == EGet)
 							{
-								handler = new CGet(&g_socket, command);
+								handler = new CGet(&socket, command);
 							}
 							else if (command.m_command == ESend)
 							{
-								handler = new CSend(&g_socket, command);
+								handler = new CSend(&socket, command);
 							}
 							else if (command.m_command == EShutdown)
 							{
@@ -365,12 +367,12 @@ void StartServer()
 							}
 							else if (command.m_command == EVersion)
 							{
-								handler = new CVersion(&g_socket, command);
+								handler = new CVersion(&socket, command);
 							}
 							else
 							{
 								printf("Invalid command received: %d\n", command.m_command);
-								g_socket.write("invalid");
+								socket.write("invalid");
 							}
 
 							if (handler != nullptr)
@@ -400,7 +402,7 @@ void StartServer()
 				shutdown = true;
 			}
 
-			g_socket.close();
+			socket.close();
 		}
 		else
 		{
