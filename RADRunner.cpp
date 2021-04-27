@@ -389,6 +389,7 @@ int main(int a_argc, const char *a_argv[])
 
 					handler->sendRequest();
 					delete handler;
+					handler = nullptr;
 
 					if (g_args[ARGS_SCRIPT] != nullptr)
 					{
