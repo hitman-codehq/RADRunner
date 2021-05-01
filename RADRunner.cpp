@@ -2,12 +2,12 @@
 #include <StdFuncs.h>
 #include <Args.h>
 #include <Lex.h>
+#include <StdSocket.h>
 #include <StdTextFile.h>
 #include <signal.h>
 #include <string.h>
 #include <vector>
 #include "Commands.h"
-#include "StdSocket.h"
 
 #ifndef WIN32
 
@@ -77,7 +77,7 @@ static void SignalHandler(int /*a_signal*/)
  * @param	a_scriptName	Fully qualified path to the script to be parsed
  */
 
-void ProcessScript(RSocket &a_socket, const char *a_scriptName)
+static void ProcessScript(RSocket &a_socket, const char *a_scriptName)
 {
 	int scriptArgLength;
 	RTextFile scriptFile;
@@ -220,7 +220,7 @@ void ProcessScript(RSocket &a_socket, const char *a_scriptName)
  * @date	Tuesday 27-Apr-2021 6:33 am, Code HQ Bergmannstrasse
  */
 
-void StartClient()
+static void StartClient()
 {
 	RSocket socket;
 
@@ -294,7 +294,7 @@ void StartClient()
  * @date	Sunday 17-Nov-2019 3:29 pm, Sankt Oberholz
  */
 
-void StartServer()
+static void StartServer()
 {
 	bool shutdown;
 	int result, selectResult;

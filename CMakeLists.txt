@@ -18,7 +18,6 @@ set(sourceFiles "RADRunner.cpp")
 set(sourceFiles ${sourceFiles} "ClientCommands.cpp")
 set(sourceFiles ${sourceFiles} "Handler.cpp")
 set(sourceFiles ${sourceFiles} "ServerCommands.cpp")
-set(sourceFiles ${sourceFiles} "StdSocket.cpp")
 
 if(WIN32)
 	set(sourceFiles ${sourceFiles} "Execute.cpp")

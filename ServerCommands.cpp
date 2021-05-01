@@ -1,10 +1,9 @@
 
 #include <StdFuncs.h>
 #include <File.h>
+#include <StdSocket.h>
 #include <string.h>
 #include "Commands.h"
-#include "StdSocket.h"
-#include <sys/stat.h>
 
 #ifdef __amigaos__
 

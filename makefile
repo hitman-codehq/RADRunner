@@ -40,7 +40,7 @@ endif
 
 EXECUTABLE = $(OBJ)/RADRunner
 
-OBJECTS = $(OBJ)/ClientCommands.o $(OBJ)/Handler.o $(OBJ)/RADRunner.o $(OBJ)/ServerCommands.o $(OBJ)/StdSocket.o
+OBJECTS = $(OBJ)/ClientCommands.o $(OBJ)/Handler.o $(OBJ)/RADRunner.o $(OBJ)/ServerCommands.o
 
 all: $(OBJ) $(EXECUTABLE)
 

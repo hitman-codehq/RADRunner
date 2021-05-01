@@ -152,7 +152,6 @@
     <ClCompile Include="Handler.cpp" />
     <ClCompile Include="RADRunner.cpp" />
     <ClCompile Include="ServerCommands.cpp" />
-    <ClCompile Include="StdSocket.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

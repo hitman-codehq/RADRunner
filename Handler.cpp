@@ -2,9 +2,8 @@
 #include <StdFuncs.h>
 #include <BaUtils.h>
 #include <File.h>
-#include <sys/stat.h>
+#include <StdSocket.h>
 #include "Commands.h"
-#include "StdSocket.h"
 
 /* Number of bytes to be transferred per call to read() or write() */
 #define TRANSFER_SIZE 1024

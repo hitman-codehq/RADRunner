@@ -1,9 +1,9 @@
 
 #include <StdFuncs.h>
 #include <File.h>
+#include <StdSocket.h>
 #include <string.h>
 #include "Commands.h"
-#include "StdSocket.h"
 
 const char *g_commandNames[] =
 {
