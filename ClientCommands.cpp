@@ -29,75 +29,57 @@ void CExecute::sendRequest()
 	printf("execute: Executing file \"%s\"\n", m_fileName);
 
 	m_command.m_size = payloadSize;
+	sendCommand();
+	m_socket->write(m_fileName, payloadSize);
 
-	if (sendCommand())
+	SResponse response;
+
+	/* Read the response to the request and if it was successful, stream the response data */
+	m_socket->read(&response, sizeof(response));
+
+	SWAP(&response.m_result);
+
+	if (response.m_result == KErrNone)
 	{
-		if (m_socket->write(m_fileName, payloadSize) == payloadSize)
+		bool done = false;
+		char *buffer = new char[STDOUT_BUFFER_SIZE];
+		int bytesRead;
+
+		/* Loop around and read the remote command's stdout and stderr output and print it out.  This */
+		/* will be terminated by two NULL terminators in a row, so search each received line for these */
+		/* and, when found, break out of the loop */
+		do
 		{
-			int size;
-			SResponse response;
-
-			/* Read the response to the request and if it was successful, stream the response data */
-			if ((size = m_socket->read(&response, (sizeof(response)))) == sizeof(response))
+			if ((bytesRead = m_socket->read(buffer, (STDOUT_BUFFER_SIZE - 1), false)) > 0)
 			{
-				SWAP(&response.m_result);
+				buffer[bytesRead] = '\0';
+				printf("%s", buffer);
 
-				if (response.m_result == KErrNone)
+				/* If at least two bytes have been received then check for them both being NULL */
+				if (bytesRead >= 2)
 				{
-					bool done = false;
-					char *buffer = new char[STDOUT_BUFFER_SIZE];
-					int bytesRead;
-
-					/* Loop around and read the remote command's stdout and stderr output and print it out.  This */
-					/* will be terminated by two NULL terminators in a row, so search each received line for these */
-					/* and, when found, break out of the loop */
-					do
+					for (int index = 0; index < (bytesRead - 1); ++index)
 					{
-						if ((bytesRead = m_socket->read(buffer, (STDOUT_BUFFER_SIZE - 1), false)) > 0)
+						if ((buffer[index] == 0) && (buffer[index + 1] == 0))
 						{
-							buffer[bytesRead] = '\0';
-							printf("%s", buffer);
-
-							/* If at least two bytes have been received then check for them both being NULL */
-							if (bytesRead >= 2)
-							{
-								for (int index = 0; index < (bytesRead - 1); ++index)
-								{
-									if ((buffer[index] == 0) && (buffer[index + 1] == 0))
-									{
-										printf("execute: Command complete\n");
-										done = true;
-									}
-								}
-							}
-						}
-						else
-						{
+							printf("execute: Command complete\n");
 							done = true;
 						}
 					}
-					while (!done);
-
-					delete [] buffer;
-				}
-				else
-				{
-					Utils::Error("Received invalid response %d", response.m_result);
 				}
 			}
 			else
 			{
-				Utils::Error("Unable to read response");
+				done = true;
 			}
 		}
-		else
-		{
-			Utils::Error("Unable to send payload");
-		}
+		while (!done);
+
+		delete [] buffer;
 	}
 	else
 	{
-		Utils::Error("Unable to send request");
+		Utils::Error("Received invalid response %d", response.m_result);
 	}
 }
 
@@ -117,44 +99,26 @@ void CGet::sendRequest()
 	printf("get: Requesting file \"%s\"\n", m_fileName);
 
 	m_command.m_size = payloadSize;
+	sendCommand();
+	m_socket->write(m_fileName, payloadSize);
+	readResponse();
 
-	if (sendCommand())
+	if (m_response.m_result == KErrNone)
 	{
-		if (m_socket->write(m_fileName, payloadSize) == payloadSize)
-		{
-			if (readResponse())
-			{
-				if (m_response.m_result == KErrNone)
-				{
-					/* Extract the file's information from the payload */
-					SFileInfo *fileInfo = reinterpret_cast<SFileInfo *>(m_responsePayload);
-					SWAP64(&fileInfo->m_microseconds);
+		/* Extract the file's information from the payload */
+		SFileInfo *fileInfo = reinterpret_cast<SFileInfo *>(m_responsePayload);
+		SWAP64(&fileInfo->m_microseconds);
 
-					/* Transfer the file from the remote server */
-					if (readFile(fileInfo->m_fileName) == KErrNone)
-					{
-						/* And set its datestamp and protection bits */
-						setFileInformation(*fileInfo);
-					}
-				}
-				else
-				{
-					Utils::Error("Received invalid response %d", m_response.m_result);
-				}
-			}
-			else
-			{
-				Utils::Error("Unable to read response");
-			}
-		}
-		else
+		/* Transfer the file from the remote server */
+		if (readFile(fileInfo->m_fileName) == KErrNone)
 		{
-			Utils::Error("Unable to send payload");
+			/* And set its datestamp and protection bits */
+			setFileInformation(*fileInfo);
 		}
 	}
 	else
 	{
-		Utils::Error("Unable to send request");
+		Utils::Error("Received invalid response %d", m_response.m_result);
 	}
 }
 
@@ -197,32 +161,22 @@ void CSend::sendRequest()
 	int32_t payloadSize = static_cast<int32_t>(sizeof(SFileInfo) + strlen(fileName) + 1);
 	m_command.m_size = payloadSize;
 
-	if (sendCommand())
-	{
-		/* Allocate an SFileInfo structure of a size large enough to hold the file's name */
-		SFileInfo *fileInfo = reinterpret_cast<SFileInfo *>(new unsigned char [payloadSize]);
+	sendCommand();
 
-		/* Initialise it with the file's name and timestamp */
-		fileInfo->m_microseconds = entry.iModified.Int64();
-		SWAP64(&fileInfo->m_microseconds);
-		strcpy(fileInfo->m_fileName, fileName);
+	/* Allocate an SFileInfo structure of a size large enough to hold the file's name */
+	SFileInfo *fileInfo = reinterpret_cast<SFileInfo *>(new unsigned char [payloadSize]);
 
-		/* And finally send the payload and the file itself */
-		if (m_socket->write(fileInfo, payloadSize) == payloadSize)
-		{
-			sendFile(m_fileName);
-		}
-		else
-		{
-			Utils::Error("Unable to send payload");
-		}
+	/* Initialise it with the file's name and timestamp */
+	fileInfo->m_microseconds = entry.iModified.Int64();
+	SWAP64(&fileInfo->m_microseconds);
+	strcpy(fileInfo->m_fileName, fileName);
 
-		delete [] reinterpret_cast<unsigned char *>(fileInfo);
-	}
-	else
-	{
-		Utils::Error("Unable to send request");
-	}
+	/* And finally send the payload and the file itself */
+	m_socket->write(fileInfo, payloadSize);
+
+	sendFile(m_fileName);
+
+	delete [] reinterpret_cast<unsigned char *>(fileInfo);
 }
 
 /**
@@ -236,10 +190,7 @@ void CShutdown::sendRequest()
 {
 	printf("shutdown: Shutting down server\n");
 
-	if (!sendCommand())
-	{
-		Utils::Error("Unable to send request");
-	}
+	sendCommand();
 }
 
 /**
@@ -251,27 +202,15 @@ void CShutdown::sendRequest()
 
 void CVersion::sendRequest()
 {
-	if (sendCommand())
-	{
-		uint32_t serverVersion, version = ((PROTOCOL_MAJOR << 16) | PROTOCOL_MINOR);
+	sendCommand();
 
-		if (m_socket->read(&serverVersion, sizeof(serverVersion)) == sizeof(serverVersion))
-		{
-			SWAP(&serverVersion);
+	uint32_t serverVersion, version = ((PROTOCOL_MAJOR << 16) | PROTOCOL_MINOR);
+	m_socket->read(&serverVersion, sizeof(serverVersion));
+	SWAP(&serverVersion);
 
-			if (serverVersion != version)
-			{
-				printf("version: Incompatible server version detected, shutting down\n");
-				exit(1);
-			}
-		}
-		else
-		{
-			Utils::Error("Unable to read response");
-		}
-	}
-	else
+	if (serverVersion != version)
 	{
-		Utils::Error("Unable to send request");
+		printf("version: Incompatible server version detected, shutting down\n");
+		exit(1);
 	}
 }

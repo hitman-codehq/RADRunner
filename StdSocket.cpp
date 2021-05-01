@@ -224,6 +224,15 @@ int RSocket::read(void *a_pvBuffer, int a_iSize, bool a_bReadAll)
 		retVal = recv(m_iSocket, buffer, a_iSize, 0);
 	}
 
+	if (retVal < 0)
+	{
+		throw Error("Unable to read from socket", retVal);
+	}
+	else if (retVal == 0)
+	{
+		throw RSocket::Error("Socket closed by remote host", retVal);
+	}
+
 	return retVal;
 }
 
@@ -262,6 +271,15 @@ int RSocket::write(const void *a_pcvBuffer, int a_iSize)
 		}
 	}
 	while (retVal < a_iSize);
+
+	if (retVal <= 0)
+	{
+		throw Error("Unable to write to socket", retVal);
+	}
+	else if (retVal == 0)
+	{
+		throw Error("Socket closed by remote host", retVal);
+	}
 
 	return retVal;
 }

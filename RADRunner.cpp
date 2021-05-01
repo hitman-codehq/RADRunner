@@ -296,8 +296,8 @@ void StartClient()
 
 void StartServer()
 {
-	bool disconnect, shutdown;
-	int result, selectResult, size;
+	bool shutdown;
+	int result, selectResult;
 	RSocket socket;
 	SCommand command;
 	fd_set socketSet;
@@ -315,7 +315,7 @@ void StartServer()
 			{
 				printf("connected\n");
 
-				disconnect = shutdown = false;
+				shutdown = false;
 
 				FD_ZERO(&socketSet);
 				FD_SET(socket.m_iSocket, &socketSet);
@@ -324,73 +324,65 @@ void StartServer()
 				/* signature as soon as it connects */
 				char clientSignature[4];
 
-				if (socket.read(clientSignature, sizeof(clientSignature)) == 4)
+				socket.read(clientSignature, sizeof(clientSignature));
+
+				if (memcmp(clientSignature, g_signature, 4) != 0)
 				{
-					if (memcmp(clientSignature, g_signature, 4) != 0)
-					{
-						Utils::Error("Connected client is not an instance of RADRunner, closing connection");
-						disconnect = true;
-					}
+					Utils::Error("Connected client is not an instance of RADRunner, closing connection");
+					shutdown = true;
 				}
 
-				while (!g_break && !disconnect && !shutdown)
+				while (!g_break && !shutdown)
 				{
 					selectResult = select(FD_SETSIZE, &socketSet, nullptr, nullptr, nullptr);
 
 					if (selectResult > 0)
 					{
-						if ((size = socket.read(&command, sizeof(command))) > 0)
+						socket.read(&command, sizeof(command));
+
+						SWAP(&command.m_command);
+						SWAP(&command.m_size);
+
+						printf("Received request \"%s\"\n", g_commandNames[command.m_command]);
+
+						CHandler *handler = nullptr;
+
+						if (command.m_command == EExecute)
 						{
-							SWAP(&command.m_command);
-							SWAP(&command.m_size);
-
-							printf("Received request \"%s\"\n", g_commandNames[command.m_command]);
-
-							CHandler *handler = nullptr;
-
-							if (command.m_command == EExecute)
-							{
-								handler = new CExecute(&socket, command);
-							}
-							else if (command.m_command == EGet)
-							{
-								handler = new CGet(&socket, command);
-							}
-							else if (command.m_command == ESend)
-							{
-								handler = new CSend(&socket, command);
-							}
-							else if (command.m_command == EShutdown)
-							{
-								shutdown = true;
-								printf("shutdown: Exiting\n");
-							}
-							else if (command.m_command == EVersion)
-							{
-								handler = new CVersion(&socket, command);
-							}
-							else
-							{
-								printf("Invalid command received: %d\n", command.m_command);
-								socket.write("invalid");
-							}
-
-							if (handler != nullptr)
-							{
-								handler->execute();
-								delete handler;
-							}
+							handler = new CExecute(&socket, command);
+						}
+						else if (command.m_command == EGet)
+						{
+							handler = new CGet(&socket, command);
+						}
+						else if (command.m_command == ESend)
+						{
+							handler = new CSend(&socket, command);
+						}
+						else if (command.m_command == EShutdown)
+						{
+							shutdown = true;
+							printf("shutdown: Exiting\n");
+						}
+						else if (command.m_command == EVersion)
+						{
+							handler = new CVersion(&socket, command);
 						}
 						else
 						{
-							disconnect = true;
+							printf("Invalid command received: %d\n", command.m_command);
+							socket.write("invalid");
+						}
 
-							printf("Client disconnected, ending session\n");
+						if (handler != nullptr)
+						{
+							handler->execute();
+							delete handler;
 						}
 					}
 					else if (selectResult == -1)
 					{
-						disconnect = true;
+						shutdown = true;
 					}
 				}
 
@@ -444,13 +436,20 @@ int main(int a_argc, const char *a_argv[])
 
 	if ((result = g_args.open(g_template, ARGS_NUM_ARGS, a_argv, a_argc)) == KErrNone)
 	{
-		if (g_args[ARGS_SERVER] != nullptr)
+		try
 		{
-			StartServer();
+			if (g_args[ARGS_SERVER] != nullptr)
+			{
+				StartServer();
+			}
+			else
+			{
+				StartClient();
+			}
 		}
-		else
+		catch(std::runtime_error &a_exception)
 		{
-			StartClient();
+			Utils::Error("Remote communication failure: %s", a_exception.what());
 		}
 
 		g_args.close();

@@ -25,7 +25,6 @@ void CExecute::execute()
 	SResponse response;
 
 	response.m_size = 0;
-
 	readPayload();
 
 	printf("execute: Executing command \"%s\"\n", m_payload);
@@ -181,15 +180,9 @@ void CSend::execute()
 
 void CVersion::execute()
 {
-	if (readPayload())
-	{
-		uint32_t serverVersion = ((PROTOCOL_MAJOR << 16) | PROTOCOL_MINOR);
+	readPayload();
 
-		SWAP(&serverVersion);
-
-		if (m_socket->write(&serverVersion, sizeof(serverVersion)) != sizeof(serverVersion))
-		{
-			Utils::Error("Unable to send server version");
-		}
-	}
+	uint32_t serverVersion = ((PROTOCOL_MAJOR << 16) | PROTOCOL_MINOR);
+	SWAP(&serverVersion);
+	m_socket->write(&serverVersion, sizeof(serverVersion));
 }

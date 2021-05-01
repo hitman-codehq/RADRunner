@@ -100,11 +100,11 @@ protected:
 
 	int readFile(const char *a_fileName);
 
-	bool readPayload();
+	void readPayload();
 
-	bool readResponse();
+	void readResponse();
 
-	bool sendCommand();
+	void sendCommand();
 
 	int sendFile(const char *a_fileName);
 

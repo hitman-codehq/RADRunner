@@ -54,11 +54,8 @@ int CHandler::readFile(const char *a_fileName)
 			bytesToRead = ((fileSize - bytesRead) >= TRANSFER_SIZE) ? TRANSFER_SIZE : (fileSize - bytesRead);
 			size = m_socket->read(buffer, bytesToRead);
 
-			if (size > 0)
-			{
-				file.write(reinterpret_cast<unsigned char *>(buffer), size);
-				bytesRead += size;
-			}
+			file.write(reinterpret_cast<unsigned char *>(buffer), size);
+			bytesRead += size;
 		}
 		while (bytesRead < static_cast<int>(fileSize));
 
@@ -91,21 +88,16 @@ int CHandler::readFile(const char *a_fileName)
  * @pre		The socket is open
  *
  * @date	Sunday 10-Jan-2021 6:39 am, Code HQ Bergmannstrasse
- * @return	true if the payload was read successfully, else false
  */
 
-bool CHandler::readPayload()
+void CHandler::readPayload()
 {
-	bool retVal = true;
-
 	/* If the command has a payload, allocate an appropriately sized buffer and read it */
 	if (m_command.m_size > 0)
 	{
 		m_payload = new unsigned char[m_command.m_size];
-		retVal = (m_socket->read(m_payload, m_command.m_size) == static_cast<int>(m_command.m_size));
+		m_socket->read(m_payload, m_command.m_size);
 	}
-
-	return retVal;
 }
 
 /**
@@ -117,32 +109,22 @@ bool CHandler::readPayload()
  * @pre		The socket is open
  *
  * @date	Saturday 27-Feb-2021 2:34 pm, Code HQ Bergmannstrasse
- * @return	true if the payload was read successfully, else false
  */
 
-bool CHandler::readResponse()
+void CHandler::readResponse()
 {
-	bool retVal = false;
-
 	/* Read the response to the request */
-	if (m_socket->read(&m_response, sizeof(m_response)) == sizeof(m_response))
+	m_socket->read(&m_response, sizeof(m_response));
+
+	SWAP(&m_response.m_result);
+	SWAP(&m_response.m_size);
+
+	/* If the response has a payload, allocate an appropriately sized buffer and read it */
+	if (m_response.m_size > 0)
 	{
-		SWAP(&m_response.m_result);
-		SWAP(&m_response.m_size);
-
-		/* If the response has a payload, allocate an appropriately sized buffer and read it */
-		if (m_response.m_size > 0)
-		{
-			m_responsePayload = new unsigned char[m_response.m_size];
-			retVal = (m_socket->read(m_responsePayload, m_response.m_size) == static_cast<int>(m_response.m_size));
-		}
-		else
-		{
-			retVal = true;
-		}
+		m_responsePayload = new unsigned char[m_response.m_size];
+		m_socket->read(m_responsePayload, m_response.m_size);
 	}
-
-	return retVal;
 }
 
 /**
@@ -150,17 +132,16 @@ bool CHandler::readResponse()
  * A convenience method to send a command, ensuring that its members are in network format before sending.
  *
  * @date	Sunday 29-Nov-2020 12:17 pm, Code HQ Bergmannstrasse
- * @return	true if the command was sent successfully, else false
  */
 
-bool CHandler::sendCommand()
+void CHandler::sendCommand()
 {
 	SCommand command = m_command;
 
 	SWAP(&command.m_command);
 	SWAP(&command.m_size);
 
-	return (m_socket->write(&command, sizeof(command)) == sizeof(command));
+	m_socket->write(&command, sizeof(command));
 }
 
 /**
@@ -187,46 +168,41 @@ int CHandler::sendFile(const char *a_fileName)
 		int fileSize = entry.iSize;
 		SWAP(&fileSize);
 
-		if (m_socket->write(&fileSize, sizeof(fileSize)) == sizeof(fileSize))
+		m_socket->write(&fileSize, sizeof(fileSize));
+
+		RFile file;
+
+		if ((retVal = file.open(a_fileName, EFileRead)) == KErrNone)
 		{
-			RFile file;
+			unsigned char *buffer = new unsigned char[TRANSFER_SIZE];
+			size_t size;
 
-			if ((retVal = file.open(a_fileName, EFileRead)) == KErrNone)
+			/* Determine the start time so that it can be used to calculate the amount of time the transfer took */
+			TTime now;
+			now.HomeTime();
+			TInt64 startTime = now.Int64();
+
+			while ((size = file.read(buffer, TRANSFER_SIZE)) > 0)
 			{
-				unsigned char *buffer = new unsigned char[TRANSFER_SIZE];
-				size_t size;
-
-				/* Determine the start time so that it can be used to calculate the amount of time the transfer took */
-				TTime now;
-				now.HomeTime();
-				TInt64 startTime = now.Int64();
-
-				while ((size = file.read(buffer, TRANSFER_SIZE)) > 0)
-				{
-					m_socket->write(buffer, static_cast<int>(size));
-				}
-
-				file.close();
-
-				/* Determine the end time and the number of milliseconds taken to perform the transfer */
-				now.HomeTime();
-				TInt64 endTime = now.Int64();
-				TInt64 total = ((endTime - startTime) / 1000);
-
-				/* Cast the time results to integers when printing as Amiga OS doesn't support 64 bit format specifiers */
-				printf("%s: Transferred %u.%u Kilobytes in %d.%d seconds\n", g_commandNames[m_command.m_command], (entry.iSize / 1024),
-					(entry.iSize % 1024), static_cast<int>(total / 1000), static_cast<int>(total % 1000));
-
-				delete [] buffer;
+				m_socket->write(buffer, static_cast<int>(size));
 			}
-			else
-			{
-				Utils::Error("Unable to open file \"%s\" for reading", a_fileName);
-			}
+
+			file.close();
+
+			/* Determine the end time and the number of milliseconds taken to perform the transfer */
+			now.HomeTime();
+			TInt64 endTime = now.Int64();
+			TInt64 total = ((endTime - startTime) / 1000);
+
+			/* Cast the time results to integers when printing as Amiga OS doesn't support 64 bit format specifiers */
+			printf("%s: Transferred %u.%u Kilobytes in %d.%d seconds\n", g_commandNames[m_command.m_command], (entry.iSize / 1024),
+				(entry.iSize % 1024), static_cast<int>(total / 1000), static_cast<int>(total % 1000));
+
+			delete [] buffer;
 		}
 		else
 		{
-			Utils::Error("Unable to write file size");
+			Utils::Error("Unable to open file \"%s\" for reading", a_fileName);
 		}
 	}
 	else

@@ -2,6 +2,8 @@
 #ifndef STDSOCKET_H
 #define STDSOCKET_H
 
+#include <stdexcept>
+
 #ifdef WIN32
 
 #include <winsock2.h>
@@ -22,6 +24,17 @@ typedef int SOCKET;
 
 class RSocket
 {
+public:
+
+	class Error : public std::runtime_error
+	{
+	public:
+
+		int	m_result;
+
+		Error(const char *a_message, int a_result) : std::runtime_error(a_message), m_result(a_result) { }
+	};
+
 private:
 
 	SOCKET	m_iServerSocket;	/**< The socket on which to listen for connections */
