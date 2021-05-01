@@ -30,6 +30,7 @@ ifeq ($(UNAME), CYGWIN_NT-10.0)
 
 CFLAGS += -athread=native
 LFLAGS += -athread=native
+OBJ := $(OBJ)_OS4
 
 else
 
