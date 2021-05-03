@@ -210,7 +210,6 @@ void CVersion::sendRequest()
 
 	if (serverVersion != version)
 	{
-		printf("version: Incompatible server version detected, shutting down\n");
-		exit(1);
+		throw std::runtime_error("Incompatible server version detected, shutting down");
 	}
 }
