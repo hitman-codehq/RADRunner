@@ -311,87 +311,99 @@ static void StartServer()
 			printf("Listening for a client connection... ");
 			fflush(stdout);
 
-			if ((result = socket.listen(80)) == KErrNone)
+			try
 			{
-				printf("connected\n");
-
-				shutdown = false;
-
-				FD_ZERO(&socketSet);
-				FD_SET(socket.m_iSocket, &socketSet);
-
-				/* Ensure that the client that just connected is a RADRunner client, which will always send a */
-				/* signature as soon as it connects */
-				char clientSignature[4];
-
-				socket.read(clientSignature, sizeof(clientSignature));
-
-				if (memcmp(clientSignature, g_signature, 4) != 0)
+				if ((result = socket.listen(80)) == KErrNone)
 				{
-					Utils::Error("Connected client is not an instance of RADRunner, closing connection");
-					shutdown = true;
-				}
+					printf("connected\n");
 
-				while (!g_break && !shutdown)
-				{
-					selectResult = select(FD_SETSIZE, &socketSet, nullptr, nullptr, nullptr);
+					shutdown = false;
 
-					if (selectResult > 0)
+					FD_ZERO(&socketSet);
+					FD_SET(socket.m_iSocket, &socketSet);
+
+					/* Ensure that the client that just connected is a RADRunner client, which will always send a */
+					/* signature as soon as it connects */
+					char clientSignature[4];
+
+					socket.read(clientSignature, sizeof(clientSignature));
+
+					if (memcmp(clientSignature, g_signature, 4) != 0)
 					{
-						socket.read(&command, sizeof(command));
-
-						SWAP(&command.m_command);
-						SWAP(&command.m_size);
-
-						printf("Received request \"%s\"\n", g_commandNames[command.m_command]);
-
-						std::shared_ptr<CHandler> handler;
-
-						if (command.m_command == EExecute)
-						{
-							handler = std::make_shared<CExecute>(&socket, command);
-						}
-						else if (command.m_command == EGet)
-						{
-							handler = std::make_shared<CGet>(&socket, command);
-						}
-						else if (command.m_command == ESend)
-						{
-							handler = std::make_shared<CSend>(&socket, command);
-						}
-						else if (command.m_command == EShutdown)
-						{
-							shutdown = true;
-							printf("shutdown: Exiting\n");
-						}
-						else if (command.m_command == EVersion)
-						{
-							handler = std::make_shared<CVersion>(&socket, command);
-						}
-						else
-						{
-							printf("Invalid command received: %d\n", command.m_command);
-							socket.write("invalid");
-						}
-
-						if (handler != nullptr)
-						{
-							handler->execute();
-							handler = nullptr;
-						}
-					}
-					else if (selectResult == -1)
-					{
+						Utils::Error("Connected client is not an instance of RADRunner, closing connection");
 						shutdown = true;
 					}
+
+					while (!g_break && !shutdown)
+					{
+						selectResult = select(FD_SETSIZE, &socketSet, nullptr, nullptr, nullptr);
+
+						if (selectResult > 0)
+						{
+							socket.read(&command, sizeof(command));
+
+							SWAP(&command.m_command);
+							SWAP(&command.m_size);
+
+							printf("Received request \"%s\"\n", g_commandNames[command.m_command]);
+
+							std::shared_ptr<CHandler> handler;
+
+							if (command.m_command == EExecute)
+							{
+								handler = std::make_shared<CExecute>(&socket, command);
+							}
+							else if (command.m_command == EGet)
+							{
+								handler = std::make_shared<CGet>(&socket, command);
+							}
+							else if (command.m_command == ESend)
+							{
+								handler = std::make_shared<CSend>(&socket, command);
+							}
+							else if (command.m_command == EShutdown)
+							{
+								shutdown = true;
+								printf("shutdown: Exiting\n");
+							}
+							else if (command.m_command == EVersion)
+							{
+								handler = std::make_shared<CVersion>(&socket, command);
+							}
+							else
+							{
+								printf("Invalid command received: %d\n", command.m_command);
+								socket.write("invalid");
+							}
+
+							if (handler != nullptr)
+							{
+								handler->execute();
+								handler = nullptr;
+							}
+						}
+						else if (selectResult == -1)
+						{
+							shutdown = true;
+						}
+					}
+
 				}
+				else
+				{
+					printf("failed (Error = %d)!\n", result);
 
+					shutdown = true;
+				}
 			}
-			else
+			catch (RSocket::Error &exception)
 			{
-				printf("failed (Error = %d)!\n", result);
-
-				shutdown = true;
+				/* If the result was 0 then the remote socket has been closed and we want to go back to listening. */
+				/* Otherwise it is a "real" socket error, so in this case rethrow the exception */
+				if (exception.m_result != 0)
+				{
+					throw;
+				}
 			}
 
 			socket.close();
@@ -449,7 +461,7 @@ int main(int a_argc, const char *a_argv[])
 		}
 		catch(std::runtime_error &a_exception)
 		{
-			Utils::Error("Remote communication failure: %s", a_exception.what());
+			Utils::Error(a_exception.what());
 		}
 
 		g_args.close();
