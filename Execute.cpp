@@ -2,6 +2,12 @@
 #include <StdFuncs.h>
 #include "Commands.h"
 
+#ifdef __amigaos__
+
+#include <dos/dostags.h>
+
+#endif /* __amigaos__ */
+
 /**
  * Launches a command and streams its output to the client.
  * This function launches a command with dedicated stdin, stdout and stderr handles that allow the
@@ -9,15 +15,75 @@
  * output from that child process and stream it back to the client that requested the launch.
  *
  * @date	Monday 15-Feb-2021 7:19 am, Code HQ Bergmannstrasse
- * @param	commandName		The name of the command to be launched
+ * @param	a_commandName	The name of the command to be launched
  * @return	KErrNone if the command was launched successfully
  * @return	KErrNotFound if the command executable could not be found
  * @return	KErrGeneral if any other error occurred
  */
 
-int CExecute::launchCommand(char *commandName)
+int CExecute::launchCommand(char *a_commandName)
 {
 	int retVal = KErrGeneral;
+	SResponse response;
+
+#ifdef __amigaos__
+
+	BPTR stdInRead = Open("Console:", MODE_OLDFILE);
+	BPTR stdOutWrite = Open("PIPE:RADRunner", MODE_NEWFILE);
+	BPTR stdOutRead = Open("PIPE:RADRunner", MODE_OLDFILE);
+
+	if ((stdInRead != 0) && (stdOutRead != 0) && (stdOutWrite != 0))
+	{
+		LONG result = SystemTags(a_commandName, SYS_Asynch, TRUE, SYS_Input, stdInRead,
+			SYS_Output, stdOutWrite, TAG_DONE);
+
+		if (result == 0)
+		{
+			char *buffer = new char[STDOUT_BUFFER_SIZE];
+			LONG bytesRead;
+
+			/* Write a successful completion code, to let the client know that it should listen for the */
+			/* command output to be streamed */
+			response.m_result = retVal = KErrNone;
+			SWAP(&response.m_result);
+			response.m_size = 0;
+			m_socket->write(&response, sizeof(response));
+
+			/* Loop around and read as much from the child's stdout as possible.  When the child exits, */
+			/* the pipe will be closed and ReadFile() will fail */
+			do
+			{
+				if ((bytesRead = Read(stdOutRead, buffer, (STDOUT_BUFFER_SIZE - 1))) > 0)
+				{
+					/* NULL terminate and print the child's output, and send it to the client for display */
+					/* there as well */
+					buffer[bytesRead] = '\0';
+					printf("%s", buffer);
+					m_socket->write(buffer, bytesRead);
+				}
+			}
+			while (bytesRead > 0);
+
+			delete [] buffer;
+		}
+	}
+
+	if (stdOutRead != 0) { Close(stdOutRead); }
+
+#elif defined(__unix__)
+
+	response.m_result = retVal = system(reinterpret_cast<const char *>(m_payload));
+
+	if (retVal == KErrNone)
+	{
+		/* Write a successful completion code, to let the client know that it should listen for the */
+		/* command output to be streamed */
+		SWAP(&response.m_result);
+		m_socket->write(&response, sizeof(response));
+	}
+
+#else /* ! __unix__ */
+
 	SECURITY_ATTRIBUTES securityAttributes;
 
 	/* Set the bInheritHandle flag so pipe handles are inherited by the child, so that it is able to read */
@@ -37,10 +103,9 @@ int CExecute::launchCommand(char *commandName)
 				{
 					/* Create the child process.  This will read from and write to the pipes we have created, */
 					/* and upon exit will close its end of the pipes, so that we can detect that it has exited */
-					if ((retVal = createChildProcess(commandName)) == 0)
+					if ((retVal = createChildProcess(a_commandName)) == 0)
 					{
 						char *buffer = new char[STDOUT_BUFFER_SIZE];
-						SResponse response;
 						BOOL success;
 						DWORD bytesRead;
 
@@ -49,7 +114,6 @@ int CExecute::launchCommand(char *commandName)
 						response.m_result = retVal;
 						SWAP(&response.m_result);
 						response.m_size = 0;
-
 						m_socket->write(&response, sizeof(response));
 
 						/* Loop around and read as much from the child's stdout as possible.  When the child exits, */
@@ -60,7 +124,7 @@ int CExecute::launchCommand(char *commandName)
 
 							if (success)
 							{
-								/* NULL terminte and print the child's output, and send it to the client for display */
+								/* NULL terminate and print the child's output, and send it to the client for display */
 								/* there as well */
 								buffer[bytesRead] = '\0';
 								printf("%s", buffer);
@@ -98,6 +162,8 @@ int CExecute::launchCommand(char *commandName)
 		}
 	}
 
+#endif /* ! __unix__ */
+
 	return retVal;
 }
 
@@ -108,12 +174,14 @@ int CExecute::launchCommand(char *commandName)
  * be controlled using the given stdio handles.
  *
  * @date	Monday 15-Feb-2021 7:19 am, Code HQ Bergmannstrasse
- * @param	commandName		The name of the command to be launched
+ * @param	a_commandName	The name of the command to be launched
  * @return	KErrNone if the command was launched successfully
  * @return	KErrNotFound if the command executable could not be found
  */
 
-int CExecute::createChildProcess(char *commandName)
+#ifdef WIN32
+
+int CExecute::createChildProcess(char *a_commandName)
 {
 	int retVal = KErrNotFound;
 	PROCESS_INFORMATION processInfo;
@@ -130,7 +198,7 @@ int CExecute::createChildProcess(char *commandName)
 	startupInfo.dwFlags |= STARTF_USESTDHANDLES;
 
 	/* Create the requested child process */
-	if (CreateProcess(NULL, commandName, NULL, NULL, TRUE, 0, NULL, NULL, &startupInfo, &processInfo))
+	if (CreateProcess(NULL, a_commandName, NULL, NULL, TRUE, 0, NULL, NULL, &startupInfo, &processInfo))
 	{
 		retVal = KErrNone;
 
@@ -148,3 +216,5 @@ int CExecute::createChildProcess(char *commandName)
 
 	return retVal;
 }
+
+#endif /* WIN32 */

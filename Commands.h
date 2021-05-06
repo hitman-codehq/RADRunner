@@ -165,9 +165,9 @@ public:
 
 	void sendRequest() override;
 
-	int createChildProcess(char *commandName);
+	int createChildProcess(char *a_commandName);
 
-	int launchCommand(char *commandName);
+	int launchCommand(char *a_commandName);
 };
 
 /**

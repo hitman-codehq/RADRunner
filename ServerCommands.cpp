@@ -21,15 +21,12 @@
 
 void CExecute::execute()
 {
-	SResponse response;
-
-	response.m_size = 0;
 	readPayload();
 
 	printf("execute: Executing command \"%s\"\n", m_payload);
 
-#ifdef WIN32
-
+	SResponse response;
+	response.m_size = 0;
 	response.m_result = launchCommand(reinterpret_cast<char *>(m_payload));
 
 	/* Write a failure completion code, to let the client know that it should not listen for the */
@@ -39,17 +36,6 @@ void CExecute::execute()
 		SWAP(&response.m_result);
 		m_socket->write(&response, sizeof(response));
 	}
-
-#else /* ! WIN32 */
-
-	response.m_result = system(reinterpret_cast<const char *>(m_payload));
-
-	/* Write the completion code, to let the client know whether it should listen for the command */
-	/* output to be streamed */
-	SWAP(&response.m_result);
-	m_socket->write(&response, sizeof(response));
-
-#endif /* ! WIN32 */
 
 	/* If the client was launched successfully then send two NULL terminators in a row.  This is the */
 	/* signal to the client that the stdout output stream has ended */
