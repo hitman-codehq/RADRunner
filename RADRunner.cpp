@@ -296,7 +296,7 @@ static void StartClient()
 
 static void StartServer()
 {
-	bool shutdown;
+	bool shutdown = false;
 	int result, selectResult;
 	RSocket socket;
 	SCommand command;
@@ -316,8 +316,6 @@ static void StartServer()
 				if ((result = socket.listen(80)) == KErrNone)
 				{
 					printf("connected\n");
-
-					shutdown = false;
 
 					FD_ZERO(&socketSet);
 					FD_SET(socket.m_iSocket, &socketSet);
