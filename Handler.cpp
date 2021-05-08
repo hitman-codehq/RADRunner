@@ -5,6 +5,12 @@
 #include <StdSocket.h>
 #include "Commands.h"
 
+#ifdef __unix__
+
+#include <sys/stat.h>
+
+#endif /* __unix__ */
+
 /* Number of bytes to be transferred per call to read() or write() */
 #define TRANSFER_SIZE 1024
 
