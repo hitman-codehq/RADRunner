@@ -6,7 +6,11 @@
 
 #include <dos/dostags.h>
 
-#endif /* __amigaos__ */
+#elif defined(__unix__)
+
+#include <unistd.h>
+
+#endif /* __unix__ */
 
 /**
  * Launches a command and streams its output to the client.
@@ -50,7 +54,7 @@ int CExecute::launchCommand(char *a_commandName)
 			m_socket->write(&response, sizeof(response));
 
 			/* Loop around and read as much from the child's stdout as possible.  When the child exits, */
-			/* the pipe will be closed and ReadFile() will fail */
+			/* the pipe will be closed and Read() will fail */
 			do
 			{
 				if ((bytesRead = Read(stdOutRead, buffer, (STDOUT_BUFFER_SIZE - 1))) > 0)
@@ -72,14 +76,37 @@ int CExecute::launchCommand(char *a_commandName)
 
 #elif defined(__unix__)
 
-	response.m_result = retVal = system(reinterpret_cast<const char *>(m_payload));
+	FILE *pipe = popen(a_commandName, "r");
 
-	if (retVal == KErrNone)
+	if (pipe != nullptr)
 	{
+		char *buffer = new char[STDOUT_BUFFER_SIZE];
+		size_t bytesRead;
+
 		/* Write a successful completion code, to let the client know that it should listen for the */
 		/* command output to be streamed */
+		response.m_result = retVal = KErrNone;
 		SWAP(&response.m_result);
+		response.m_size = 0;
 		m_socket->write(&response, sizeof(response));
+
+		/* Loop around and read as much from the child's stdout as possible.  When the child exits, */
+		/* the pipe will be closed and fread() will fail */
+		do
+		{
+			if ((bytesRead = fread(buffer, 1, (STDOUT_BUFFER_SIZE - 1), pipe)) > 0)
+			{
+				/* NULL terminate and print the child's output, and send it to the client for display */
+				/* there as well */
+				buffer[bytesRead] = '\0';
+				printf("%s", buffer);
+				m_socket->write(buffer, bytesRead);
+			}
+		}
+		while (bytesRead > 0);
+
+		delete [] buffer;
+		pclose(pipe);
 	}
 
 #else /* ! __unix__ */
