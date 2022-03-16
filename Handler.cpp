@@ -46,7 +46,7 @@ int CHandler::readFile(const char *a_fileName)
 
 	if (retVal == KErrNone)
 	{
-		int bytesRead = 0, bytesToRead, size;
+		uint32_t bytesRead = 0, bytesToRead, size;
 		unsigned char *buffer = new unsigned char[TRANSFER_SIZE];
 
 		/* Determine the start time so that it can be used to calculate the amount of time the transfer took */
@@ -62,7 +62,7 @@ int CHandler::readFile(const char *a_fileName)
 			file.write(reinterpret_cast<unsigned char *>(buffer), size);
 			bytesRead += size;
 		}
-		while (bytesRead < static_cast<int>(fileSize));
+		while (bytesRead < fileSize);
 
 		/* Determine the end time and the number of milliseconds taken to perform the transfer */
 		now.HomeTime();
