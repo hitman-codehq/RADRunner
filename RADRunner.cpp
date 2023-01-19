@@ -8,7 +8,7 @@
 #include <signal.h>
 #include <string.h>
 #include <vector>
-#include "Commands.h"
+#include <Yggdrasil/Commands.h>
 
 #ifndef WIN32
 

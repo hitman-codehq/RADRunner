@@ -1,5 +1,5 @@
 
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.16)
 
 project(RADRunner)
 
@@ -17,7 +17,6 @@ endif()
 set(sourceFiles "RADRunner.cpp")
 set(sourceFiles ${sourceFiles} "ClientCommands.cpp")
 set(sourceFiles ${sourceFiles} "Execute.cpp")
-set(sourceFiles ${sourceFiles} "Handler.cpp")
 set(sourceFiles ${sourceFiles} "ServerCommands.cpp")
 
 find_package(Qt5 COMPONENTS Core Widgets)

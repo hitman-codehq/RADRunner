@@ -1,6 +1,6 @@
 
 #include <StdFuncs.h>
-#include "Commands.h"
+#include <Yggdrasil/Commands.h>
 
 #ifdef __amigaos__
 

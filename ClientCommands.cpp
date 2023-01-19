@@ -3,7 +3,7 @@
 #include <File.h>
 #include <StdSocket.h>
 #include <string.h>
-#include "Commands.h"
+#include <Yggdrasil/Commands.h>
 
 const char *g_commandNames[] =
 {
