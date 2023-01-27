@@ -76,7 +76,11 @@ int CExecute::launchCommand(char *a_commandName)
 
 #elif defined(__unix__)
 
-	FILE *pipe = popen(a_commandName, "r");
+	// On UNIX systems, there is no way to programmatically capture stderr, but we can redirect it
+	// to stdout as a part of command invocation
+	std::string command = std::string(a_commandName) + " 2>&1";
+
+	FILE *pipe = popen(command.c_str(), "r");
 
 	if (pipe != nullptr)
 	{
