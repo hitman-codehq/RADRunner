@@ -261,25 +261,25 @@ static void StartClient()
 				{
 					handler = std::make_shared<CDir>(&socket, g_args[ARGS_DIR]);
 				}
-
-				if (g_args[ARGS_EXECUTE] != nullptr)
+				else if (g_args[ARGS_EXECUTE] != nullptr)
 				{
 					handler = std::make_shared<CExecute>(&socket, g_args[ARGS_EXECUTE]);
 				}
-
-				if (g_args[ARGS_GET] != nullptr)
+				else if (g_args[ARGS_GET] != nullptr)
 				{
 					handler = std::make_shared<CGet>(&socket, g_args[ARGS_GET]);
 				}
-
-				if (g_args[ARGS_SEND] != nullptr)
+				else if (g_args[ARGS_SEND] != nullptr)
 				{
 					handler = std::make_shared<CSend>(&socket, g_args[ARGS_SEND]);
 				}
-
-				if (g_args[ARGS_SHUTDOWN] != nullptr)
+				else if (g_args[ARGS_SHUTDOWN] != nullptr)
 				{
 					handler = std::make_shared<CShutdown>(&socket);
+				}
+				else
+				{
+					Utils::Error("Unknown command");
 				}
 
 				if (handler != nullptr)
