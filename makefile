@@ -2,13 +2,16 @@
 CFLAGS = -c -fno-asynchronous-unwind-tables -std=gnu++14 -Wall -Wextra
 IFLAGS = -I../StdFuncs -D__USE_INLINE__
 LFLAGS = -L../StdFuncs/$(OBJ)
-LIBS = -lStdFuncs -lauto
+LIBS = -lStdFuncs
 
 ifdef PREFIX
 	AR = @$(PREFIX)ar
 	CC = @$(PREFIX)g++
 	LD = @$(PREFIX)g++
 	STRIP = @$(PREFIX)strip
+
+	LIBS += -lauto
+	STRIP_FLAGS = -R.comment
 else
 	AR = @ar
 	CC = @g++
@@ -26,17 +29,15 @@ endif
 
 UNAME = $(shell uname)
 
-ifeq ($(UNAME), CYGWIN_NT-10.0)
-
-CFLAGS += -athread=native
-LFLAGS += -athread=native
-OBJ := $(OBJ)_OS4
-
-else
-
-LFLAGS += -mcrt=clib2
-LIBS += -lnet
-
+ifdef PREFIX
+	ifeq ($(UNAME), CYGWIN_NT-10.0)
+		CFLAGS += -athread=native
+		LFLAGS += -athread=native
+		OBJ := $(OBJ)_OS4
+	else
+		LFLAGS += -mcrt=clib2
+		LIBS += -lnet
+	endif
 endif
 
 EXECUTABLE = $(OBJ)/RADRunner
