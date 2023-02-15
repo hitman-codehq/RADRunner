@@ -2,22 +2,59 @@
 #include <StdFuncs.h>
 #include <File.h>
 #include <StdSocket.h>
-#include <string.h>
 #include <Yggdrasil/Commands.h>
+#include <string.h>
 
-const char *g_commandNames[] =
+/**
+ * Requests a directory listing.
+ * Requests the remote server list the contents of the specified directory.  The name of the directory
+ * to be listed is passed in as the payload.  If "" or "." is passed in, the contents of the current
+ * directory will be listed.
+ *
+ * @date	Wednesday 11-Jan-2023 6:52 am, Code HQ Tokyo Tsukuda
+ */
+
+void CDir::sendRequest()
 {
-	"execute",
-	"get",
-	"send",
-	"shutdown",
-	"version"
-};
+	int32_t payloadSize = static_cast<int32_t>(strlen(m_directoryName) + 1);
+
+	printf("dir: Requesting directory listing for \"%s\"\n", m_directoryName);
+
+	m_command.m_size = payloadSize;
+	sendCommand();
+	m_socket->write(m_directoryName, payloadSize);
+	readResponse();
+
+	if (m_response.m_result == KErrNone)
+	{
+		char *name;
+		uint32_t size;
+		unsigned char *payload = m_responsePayload, *payloadEnd = m_responsePayload + m_response.m_size;
+
+		/* Iterate through the file information in the payload and display its contents.  Provided the payload */
+		/* is structured correctly, we could just check for it being ended by NULL terminator, but in the interests */
+		/* of safety, we'll also check that we haven't overrun the end */
+		while (payload < payloadEnd && *payload != '\0')
+		{
+			name = reinterpret_cast<char *>(payload);
+			payload += strlen(name) + 1;
+			STREAM_INT(size, payload);
+			payload += sizeof(size);
+			printf("%s %d\n", name, size);
+
+			ASSERTM((payload < payloadEnd), "CDir::sendRequest() => Payload contents do not match its size");
+		}
+	}
+	else
+	{
+		Utils::Error("Received invalid response %d", m_response.m_result);
+	}
+}
 
 /**
  * Requests execution of a file.
  * Requests the remote execution of an executable or script file.  The file's stdout and stderr output
- * will be displayed on the remote console only.
+ * will be displayed on the remote console and will also be returned to the client, for display there.
  *
  * @date	Wednesday 29-Jan-2020 2:13 pm, Scoot flight TR 735 to Singapore
  */

@@ -2,14 +2,102 @@
 #include <StdFuncs.h>
 #include <File.h>
 #include <StdSocket.h>
-#include <string.h>
 #include <Yggdrasil/Commands.h>
+#include <string.h>
 
 #ifdef __amigaos__
 
 #include <sys/wait.h>
 
-#endif /* __amigaos__ */
+#define WRITE_INT(Dest, Value) \
+	*Dest = Value & 0xff; \
+	*(Dest + 1) = (Value >> 8) & 0xff; \
+	*(Dest + 2) = (Value >> 16) & 0xff; \
+	*(Dest + 3) = (Value >> 24) & 0xff
+
+#else /* ! __amigaos__ */
+
+#define WRITE_INT(Dest, Value) \
+	*Dest = (Value >> 24) & 0xff; \
+	*(Dest + 1) = (Value >> 16) & 0xff; \
+	*(Dest + 2) = (Value >> 8) & 0xff; \
+	*(Dest + 3) = Value & 0xff
+
+#endif /* ! __amigaos__ */
+
+void CDir::execute()
+{
+	readPayload();
+
+	/* Extract the filename from the payload */
+	m_directoryName = reinterpret_cast<char*>(m_payload);
+
+	int result;
+	RDir dir;
+	SResponse response;
+	TEntryArray *entries;
+
+	/* Scan the specified directory and build a list of files that it contains */
+	if ((result = dir.open(m_directoryName)) == KErrNone)
+	{
+		if ((result = dir.read(entries, EDirSortNameAscending)) == KErrNone)
+		{
+			char *payload;
+			size_t offset = 0;
+			uint32_t payloadSize = 1;
+
+			/* Iterate through the list of files and determine the amount of memory required to store the filenames */
+			/* and file metadata */
+			const TEntry *entry = entries->getHead();
+
+			while (entry != nullptr)
+			{
+				payloadSize += static_cast<uint32_t>(strlen(entry->iName) + 1 + sizeof(TEntry::iSize));
+				entry = entries->getSucc(entry);
+			}
+
+			/* Allocate a buffer large enough to hold the response payload and fill it with the file information */
+			payload = new char[payloadSize];
+
+			entry = entries->getHead();
+
+			while (entry != nullptr)
+			{
+				memcpy(payload + offset, entry->iName, strlen(entry->iName) + 1);
+				offset += strlen(entry->iName) + 1;
+				WRITE_INT((payload + offset), entry->iSize);
+				offset += sizeof(entry->iSize);
+
+				entry = entries->getSucc(entry);
+			}
+
+			*(payload + offset) = '\0';
+
+			response.m_result = result;
+			SWAP(&response.m_result);
+
+			response.m_size = payloadSize;
+			SWAP(&response.m_size);
+
+			m_socket->write(&response, sizeof(response));
+			m_socket->write(payload, payloadSize);
+
+			delete [] payload;
+		}
+
+		dir.close();
+	}
+
+	/* If the directory could not be read, just send a response with an empty payload */
+	if (result != KErrNone)
+	{
+		response.m_result = result;
+		response.m_size = 0;
+		SWAP(&response.m_result);
+
+		m_socket->write(&response, sizeof(response));
+	}
+}
 
 /**
  * Executes a file.
