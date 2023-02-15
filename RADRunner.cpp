@@ -17,13 +17,14 @@
 #endif /* ! WIN32 */
 
 #define ARGS_REMOTE 0
-#define ARGS_EXECUTE 1
-#define ARGS_GET 2
-#define ARGS_SCRIPT 3
-#define ARGS_SEND 4
-#define ARGS_SERVER 5
-#define ARGS_SHUTDOWN 6
-#define ARGS_NUM_ARGS 7
+#define ARGS_DIR 1
+#define ARGS_EXECUTE 2
+#define ARGS_GET 3
+#define ARGS_SCRIPT 4
+#define ARGS_SEND 5
+#define ARGS_SERVER 6
+#define ARGS_SHUTDOWN 7
+#define ARGS_NUM_ARGS 8
 
 #ifdef __amigaos4__
 
@@ -50,8 +51,8 @@ static const char g_accVersion[] = "$VER: RADRunner 0.01 (17.04.2021)";
 #endif /* __amigaos__ */
 
 /* Template for use in obtaining command line parameters.  Remember to change the indexes */
-/* in Scanner.h if the ordering or number of these change */
-static const char g_template[] = "REMOTE,EXECUTE/K,GET/K,SCRIPT/K,SEND/K,SERVER/S,SHUTDOWN/S";
+/* in Commands.h if the ordering or number of these change */
+static const char g_template[] = "REMOTE,DIR/K,EXECUTE/K,GET/K,SCRIPT/K,SEND/K,SERVER/S,SHUTDOWN/S";
 
 /* Signature sent by the client when connecting, to identify it as a RADRunner client */
 static const char g_signature[] = "RADR";
@@ -153,7 +154,18 @@ static void ProcessScript(RSocket &a_socket, const char *a_scriptName)
 					}
 				}
 
-				if (command == "execute")
+				if (command == "dir")
+				{
+					if (!argument.empty())
+					{
+						handler = std::make_shared<CDir>(&a_socket, argument.c_str());
+					}
+					else
+					{
+						Utils::Error("No value was specified for the argument \"dir\"");
+					}
+				}
+				else if (command == "execute")
 				{
 					if (!argument.empty())
 					{
@@ -245,6 +257,11 @@ static void StartClient()
 			}
 			else
 			{
+				if (g_args[ARGS_DIR] != nullptr)
+				{
+					handler = std::make_shared<CDir>(&socket, g_args[ARGS_DIR]);
+				}
+
 				if (g_args[ARGS_EXECUTE] != nullptr)
 				{
 					handler = std::make_shared<CExecute>(&socket, g_args[ARGS_EXECUTE]);
@@ -347,7 +364,11 @@ static void StartServer()
 
 							std::shared_ptr<CHandler> handler;
 
-							if (command.m_command == EExecute)
+							if (command.m_command == EDir)
+							{
+								handler = std::make_shared<CDir>(&socket, command);
+							}
+							else if (command.m_command == EExecute)
 							{
 								handler = std::make_shared<CExecute>(&socket, command);
 							}
