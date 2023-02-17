@@ -1,0 +1,32 @@
+name: Linux
+
+on:
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Checkout StdFuncs
+        uses: actions/checkout@v3
+        with:
+          repository: hitman-codehq/StdFuncs
+          path: StdFuncs
+      - name: Download Libraries
+        run: |
+          mv StdFuncs ..
+          gh run download --repo hitman-codehq/StdFuncs --name Libraries --dir ../StdFuncs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build
+        run: |
+          make
+      - name: Build Debug
+        run: |
+          make DEBUG=1
