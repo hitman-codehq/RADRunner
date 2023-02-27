@@ -52,7 +52,7 @@ $(OBJ):
 $(EXECUTABLE): $(OBJECTS) ../StdFuncs/$(OBJ)/libStdFuncs.a
 	@echo Linking $@...
 	$(LD) $(LFLAGS) $(OBJECTS) $(LIBS) -o $@.debug
-	$(STRIP) -R.comment $@.debug -o $@
+	$(STRIP) $(STRIP_FLAGS) $@.debug -o $@
 
 $(OBJ)/%.o: %.cpp
 	@echo Compiling $<...

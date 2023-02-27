@@ -6,6 +6,18 @@
 #include <string.h>
 
 /**
+ * Requests the deletion of a file.
+ * This command is a part of the protocol used by RADRunner, but currently, only the server-side
+ * version of this command is implemented.
+ *
+ * @date	Wednesday 08-Mar-2023 7:50 am, Code HQ Tokyo Tsukuda
+ */
+
+void CDelete::sendRequest()
+{
+}
+
+/**
  * Requests a directory listing.
  * Requests the remote server list the contents of the specified directory.  The name of the directory
  * to be listed is passed in as the payload.  If "" or "." is passed in, the contents of the current
@@ -32,8 +44,8 @@ void CDir::sendRequest()
 		unsigned char *payload = m_responsePayload, *payloadEnd = m_responsePayload + m_response.m_size;
 
 		/* Iterate through the file information in the payload and display its contents.  Provided the payload */
-		/* is structured correctly, we could just check for it being ended by NULL terminator, but in the interests */
-		/* of safety, we'll also check that we haven't overrun the end */
+		/* is structured correctly, we could just check for it being ended by NULL terminator, but in the */
+		/* interest of safety, we'll also check that we haven't overrun the end */
 		while (payload < payloadEnd && *payload != '\0')
 		{
 			name = reinterpret_cast<char *>(payload);
@@ -121,6 +133,18 @@ void CExecute::sendRequest()
 }
 
 /**
+ * Requests detailed file information from the server.
+ * This command is a part of the protocol used by RADRunner, but currently, only the server-side
+ * version of this command is implemented.
+ *
+ * @date	Friday 24-Feb-2023 8:10 am, Code HQ Tokyo Tsukuda
+ */
+
+void CFileInfo::sendRequest()
+{
+}
+
+/**
  * Requests a file from the remote server.
  * Transfers a file from the remote server to a local host and displays an error if the file is not able
  * to be found on the server.  If a qualified filename is specified then the path will be used on the remote
@@ -160,6 +184,18 @@ void CGet::sendRequest()
 }
 
 /**
+ * Requests the renaming of a file.
+ * This command is a part of the protocol used by RADRunner, but currently, only the server-side
+ * version of this command is implemented.
+ *
+ * @date	Saturday 11-Mar-2023 6:47 am, Code HQ Tokyo Tsukuda
+ */
+
+void CRename::sendRequest()
+{
+}
+
+/**
  * Sends a file to the remote server.
  * Transfers a file to the remote server.  If a qualified filename is specified then the path will be stripped,
  * so that the file will be written into the current directory of the remote server.
@@ -171,7 +207,7 @@ void CSend::sendRequest()
 {
 	TEntry entry;
 
-	printf("%s: Sending file \"%s\"\n", g_commandNames[m_command.m_command], m_fileName);
+	printf("send: Sending file \"%s\"\n", m_fileName);
 
 	/* If the file doesn't exist then bail out immediately */
 	if (Utils::GetFileInfo(m_fileName, &entry) != KErrNone)
