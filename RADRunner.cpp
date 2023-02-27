@@ -54,9 +54,6 @@ static const char g_accVersion[] = "$VER: RADRunner 0.01 (17.04.2021)";
 /* in Commands.h if the ordering or number of these change */
 static const char g_template[] = "REMOTE,DIR/K,EXECUTE/K,GET/K,SCRIPT/K,SEND/K,SERVER/S,SHUTDOWN/S";
 
-/* Signature sent by the client when connecting, to identify it as a RADRunner client */
-static const char g_signature[] = "RADR";
-
 static volatile bool g_break;		/* Set to true if when ctrl-c is hit by the user */
 static RArgs g_args;				/* Contains the parsed command line arguments */
 
@@ -364,7 +361,11 @@ static void StartServer()
 
 							std::shared_ptr<CHandler> handler;
 
-							if (command.m_command == EDir)
+							if (command.m_command == EDelete)
+							{
+								handler = std::make_shared<CDelete>(&socket, command);
+							}
+							else if (command.m_command == EDir)
 							{
 								handler = std::make_shared<CDir>(&socket, command);
 							}
@@ -372,9 +373,17 @@ static void StartServer()
 							{
 								handler = std::make_shared<CExecute>(&socket, command);
 							}
+							else if (command.m_command == EFileInfo)
+							{
+								handler = std::make_shared<CFileInfo>(&socket, command);
+							}
 							else if (command.m_command == EGet)
 							{
 								handler = std::make_shared<CGet>(&socket, command);
+							}
+							else if (command.m_command == ERename)
+							{
+								handler = std::make_shared<CRename>(&socket, command);
 							}
 							else if (command.m_command == ESend)
 							{

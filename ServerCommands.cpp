@@ -1,6 +1,7 @@
 
 #include <StdFuncs.h>
 #include <File.h>
+#include <FileUtils.h>
 #include <StdSocket.h>
 #include <Yggdrasil/Commands.h>
 #include <string.h>
@@ -25,12 +26,49 @@
 
 #endif /* ! __amigaos__ */
 
+/**
+ * Deletes a file.
+ * Deletes the file specified by the client.
+ *
+ * @date	Wednesday 08-Mar-2023 7:47 am, Code HQ Tokyo Tsukuda
+ */
+
+void CDelete::execute()
+{
+	readPayload();
+
+	/* Extract the filename from the payload */
+	char *fileName = reinterpret_cast<char *>(m_payload);
+
+	printf("delete: Deleting file \"%s\"\n", fileName);
+
+	RFileUtils fileUtils;
+	SResponse response;
+
+	/* Delete the file and return the result to the client */
+	response.m_result = fileUtils.deleteFile(fileName);
+	SWAP(&response.m_result);
+
+	response.m_size = 0;
+
+	m_socket->write(&response, sizeof(response));
+}
+
+/**
+ * Sends a directory listing to the remote client.
+ * Lists the contents of the requested directory and returns the list of files to the client.
+ *
+ * @date	Wednesday 11-Jan-2023 6:52 am, Code HQ Tokyo Tsukuda
+ */
+
 void CDir::execute()
 {
 	readPayload();
 
 	/* Extract the filename from the payload */
 	m_directoryName = reinterpret_cast<char*>(m_payload);
+
+	printf("dir: Listing contents of directory \"%s\"\n", m_directoryName);
 
 	int result;
 	RDir dir;
@@ -155,6 +193,55 @@ void CExecute::execute()
 }
 
 /**
+ * Determines detailed file information and returns it to the client.
+ * Sends information about a filesystem object to the client, allowing it to determine such things
+ * as the size of the object, whether it is a file or a directory, its size etc.
+ *
+ * @date	Thursday 23-Feb-2023 10:04 am, Code HQ Tokyo Tsukuda
+ */
+
+void CFileInfo::execute()
+{
+	readPayload();
+
+	/* Extract the filename from the payload */
+	m_fileName = reinterpret_cast<char*>(m_payload);
+
+	printf("fileinfo: Querying information about file \"%s\"\n", m_payload);
+
+	int result;
+	SFileInfo *fileInfo;
+	SResponse response;
+	TEntry entry;
+
+	/* Determine if the file exists and send the result to the remote client */
+	result = response.m_result = getFileInformation(m_fileName, fileInfo);
+	SWAP(&response.m_result);
+
+	/* If the file exists then send a response and a payload, containing the file's timestamp */
+	if (result == KErrNone)
+	{
+		/* Include the size of the filename in the payload size */
+		int32_t payloadSize = static_cast<int32_t>(sizeof(SFileInfo) + strlen(entry.iName) + 1);
+
+		/* And send the response and its payload */
+		response.m_size = payloadSize;
+		SWAP(&response.m_size);
+
+		m_socket->write(&response, sizeof(response));
+		m_socket->write(fileInfo, payloadSize);
+
+		delete[] reinterpret_cast<unsigned char*>(fileInfo);
+	}
+	/* Otherwise just send a response with an empty payload */
+	else
+	{
+		response.m_size = 0;
+		m_socket->write(&response, sizeof(response));
+	}
+}
+
+/**
  * Sends a file to the remote client.
  * Transfers a file, if it exists, to the remote client.  If the file does not exist then an error will be
  * sent instead, to indicate this.
@@ -216,6 +303,35 @@ void CGet::execute()
 	{
 		sendFile(m_fileName);
 	}
+}
+
+/**
+ * Renames a file.
+ * Renames the file specified by the client.
+ *
+ * @date	Saturday 11-Mar-2023 6:47 am, Code HQ Tokyo Tsukuda
+ */
+
+void CRename::execute()
+{
+	readPayload();
+
+	/* Extract the old and new filenames from the payload */
+	char *oldName = reinterpret_cast<char *>(m_payload);
+	char *newName = reinterpret_cast<char *>(m_payload + strlen(oldName) + 1);
+
+	printf("rename: Renaming file \"%s\" to \"%s\"\n", oldName, newName);
+
+	RFileUtils fileUtils;
+	SResponse response;
+
+	/* Rename the file and return the result to the client */
+	response.m_result = fileUtils.renameFile(oldName, newName);
+	SWAP(&response.m_result);
+
+	response.m_size = 0;
+
+	m_socket->write(&response, sizeof(response));
 }
 
 /**
