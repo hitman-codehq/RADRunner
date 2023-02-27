@@ -66,7 +66,7 @@ void CDir::execute()
 	readPayload();
 
 	/* Extract the filename from the payload */
-	m_directoryName = reinterpret_cast<char*>(m_payload);
+	m_directoryName = reinterpret_cast<char *>(m_payload);
 
 	printf("dir: Listing contents of directory \"%s\"\n", m_directoryName);
 
@@ -205,7 +205,7 @@ void CFileInfo::execute()
 	readPayload();
 
 	/* Extract the filename from the payload */
-	m_fileName = reinterpret_cast<char*>(m_payload);
+	m_fileName = reinterpret_cast<char *>(m_payload);
 
 	printf("fileinfo: Querying information about file \"%s\"\n", m_payload);
 
@@ -231,7 +231,7 @@ void CFileInfo::execute()
 		m_socket->write(&response, sizeof(response));
 		m_socket->write(fileInfo, payloadSize);
 
-		delete[] reinterpret_cast<unsigned char*>(fileInfo);
+		delete[] reinterpret_cast<unsigned char *>(fileInfo);
 	}
 	/* Otherwise just send a response with an empty payload */
 	else
