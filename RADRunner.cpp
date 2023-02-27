@@ -318,133 +318,138 @@ static void StartServer()
 
 	printf("Starting RADRunner server\n");
 
-	do
+	if ((result = socket.open(nullptr, 80)) == KErrNone)
 	{
-		if ((result = socket.open(nullptr, 80)) == KErrNone)
+		if ((result = socket.listen(80)) == KErrNone)
 		{
-			printf("Listening for a client connection... ");
-			fflush(stdout);
-
-			try
+			do
 			{
-				if ((result = socket.listen(80)) == KErrNone)
+				printf("Listening for a client connection... ");
+				fflush(stdout);
+
+				if ((result = socket.accept()) == KErrNone)
 				{
 					printf("connected\n");
 
-					FD_ZERO(&socketSet);
-					FD_SET(socket.m_iSocket, &socketSet);
-
-					/* Ensure that the client that just connected is a RADRunner client, which will always send a */
-					/* signature as soon as it connects */
-					char clientSignature[4];
-
-					socket.read(clientSignature, sizeof(clientSignature));
-
-					if (memcmp(clientSignature, g_signature, 4) != 0)
+					try
 					{
-						Utils::Error("Connected client is not an instance of RADRunner, closing connection");
-						shutdown = true;
-					}
+						FD_ZERO(&socketSet);
+						FD_SET(socket.m_socket, &socketSet);
 
-					while (!g_break && !shutdown)
-					{
-						selectResult = select(FD_SETSIZE, &socketSet, nullptr, nullptr, nullptr);
+						/* Ensure that the client that just connected is a RADRunner client, which will always send a */
+						/* signature as soon as it connects */
+						char clientSignature[4];
 
-						if (selectResult > 0)
+						socket.read(clientSignature, sizeof(clientSignature));
+
+						if (memcmp(clientSignature, g_signature, 4) != 0)
 						{
-							socket.read(&command, sizeof(command));
+							Utils::Error("Connected client is not an instance of RADRunner, closing connection");
+							shutdown = true;
+						}
 
-							SWAP(&command.m_command);
-							SWAP(&command.m_size);
+						while (!g_break && !shutdown)
+						{
+							selectResult = select(FD_SETSIZE, &socketSet, nullptr, nullptr, nullptr);
 
-							printf("Received request \"%s\"\n", g_commandNames[command.m_command]);
+							if (selectResult > 0)
+							{
+								socket.read(&command, sizeof(command));
 
-							std::shared_ptr<CHandler> handler;
+								SWAP(&command.m_command);
+								SWAP(&command.m_size);
 
-							if (command.m_command == EDelete)
-							{
-								handler = std::make_shared<CDelete>(&socket, command);
+								printf("Received request \"%s\"\n", g_commandNames[command.m_command]);
+
+								std::shared_ptr<CHandler> handler;
+
+								if (command.m_command == EDelete)
+								{
+									handler = std::make_shared<CDelete>(&socket, command);
+								}
+								else if (command.m_command == EDir)
+								{
+									handler = std::make_shared<CDir>(&socket, command);
+								}
+								else if (command.m_command == EExecute)
+								{
+									handler = std::make_shared<CExecute>(&socket, command);
+								}
+								else if (command.m_command == EFileInfo)
+								{
+									handler = std::make_shared<CFileInfo>(&socket, command);
+								}
+								else if (command.m_command == EGet)
+								{
+									handler = std::make_shared<CGet>(&socket, command);
+								}
+								else if (command.m_command == ERename)
+								{
+									handler = std::make_shared<CRename>(&socket, command);
+								}
+								else if (command.m_command == ESend)
+								{
+									handler = std::make_shared<CSend>(&socket, command);
+								}
+								else if (command.m_command == EShutdown)
+								{
+									printf("shutdown: Exiting\n");
+									shutdown = true;
+								}
+								else if (command.m_command == EVersion)
+								{
+									handler = std::make_shared<CVersion>(&socket, command);
+								}
+								else
+								{
+									printf("Invalid command received: %d\n", command.m_command);
+									socket.write("invalid");
+								}
+
+								if (handler != nullptr)
+								{
+									handler->execute();
+									handler = nullptr;
+								}
 							}
-							else if (command.m_command == EDir)
-							{
-								handler = std::make_shared<CDir>(&socket, command);
-							}
-							else if (command.m_command == EExecute)
-							{
-								handler = std::make_shared<CExecute>(&socket, command);
-							}
-							else if (command.m_command == EFileInfo)
-							{
-								handler = std::make_shared<CFileInfo>(&socket, command);
-							}
-							else if (command.m_command == EGet)
-							{
-								handler = std::make_shared<CGet>(&socket, command);
-							}
-							else if (command.m_command == ERename)
-							{
-								handler = std::make_shared<CRename>(&socket, command);
-							}
-							else if (command.m_command == ESend)
-							{
-								handler = std::make_shared<CSend>(&socket, command);
-							}
-							else if (command.m_command == EShutdown)
+							else if (selectResult == -1)
 							{
 								shutdown = true;
-								printf("shutdown: Exiting\n");
-							}
-							else if (command.m_command == EVersion)
-							{
-								handler = std::make_shared<CVersion>(&socket, command);
-							}
-							else
-							{
-								printf("Invalid command received: %d\n", command.m_command);
-								socket.write("invalid");
-							}
-
-							if (handler != nullptr)
-							{
-								handler->execute();
-								handler = nullptr;
 							}
 						}
-						else if (selectResult == -1)
+					}
+
+					catch (RSocket::Error &exception)
+					{
+						/* If the result was 0 then the remote socket has been closed and we want to go back to listening. */
+						/* Otherwise it is a "real" socket error, so display an error and shut down */
+						if (exception.m_result != 0)
 						{
+							printf("Unable to perform I/O on socket (Error = %d)!\n", exception.m_result);
 							shutdown = true;
 						}
 					}
-
 				}
 				else
 				{
 					printf("failed (Error = %d)!\n", result);
-
 					shutdown = true;
 				}
-			}
-			catch (RSocket::Error &exception)
-			{
-				/* If the result was 0 then the remote socket has been closed and we want to go back to listening. */
-				/* Otherwise it is a "real" socket error, so in this case rethrow the exception */
-				if (exception.m_result != 0)
-				{
-					throw;
-				}
-			}
-
-			socket.close();
+			} while (!g_break && !shutdown);
 		}
 		else
 		{
-			Utils::Error("Unable to open socket (Error = %d)", result);
-
+			printf("Unable to listen on socket (Error = %d)!\n", result);
 			shutdown = true;
 		}
 
+		socket.close();
 	}
-	while (!g_break && !shutdown);
+	else
+	{
+		Utils::Error("Unable to open socket (Error = %d)", result);
+		shutdown = true;
+	}
 
 	if (g_break)
 	{
