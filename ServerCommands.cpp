@@ -291,9 +291,11 @@ void CGet::execute()
 
 		delete [] reinterpret_cast<unsigned char *>(fileInfo);
 	}
-	/* Otherwise just send a response with an empty payload */
+	/* Otherwise display an error and just send a response with an empty payload */
 	else
 	{
+		Utils::Error("fileinfo: Unable to query information about file \"%s\"", m_fileName);
+
 		response.m_size = 0;
 		m_socket->write(&response, sizeof(response));
 	}
