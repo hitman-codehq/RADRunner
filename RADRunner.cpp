@@ -2,9 +2,7 @@
 #include <StdFuncs.h>
 #include <Args.h>
 #include <Lex.h>
-#include <StdSocket.h>
 #include <StdTextFile.h>
-#include <memory>
 #include <signal.h>
 #include <string.h>
 #include <vector>
@@ -110,7 +108,7 @@ static void ProcessScript(RSocket &a_socket, const char *a_scriptName)
 			/* Extract the first token on the line */
 			if ((commandToken = tokens.NextToken(&commandLength)) != nullptr)
 			{
-				std::shared_ptr<CHandler> handler;
+				CHandler *handler = nullptr;
 				std::string command(commandToken, commandLength);
 
 				/* If it is a comment character then continue to the next line.  We check for the character being */
@@ -155,7 +153,7 @@ static void ProcessScript(RSocket &a_socket, const char *a_scriptName)
 				{
 					if (!argument.empty())
 					{
-						handler = std::make_shared<CDir>(&a_socket, argument.c_str());
+						handler = new CDir(&a_socket, argument.c_str());
 					}
 					else
 					{
@@ -166,7 +164,7 @@ static void ProcessScript(RSocket &a_socket, const char *a_scriptName)
 				{
 					if (!argument.empty())
 					{
-						handler = std::make_shared<CExecute>(&a_socket, argument.c_str());
+						handler = new CExecute(&a_socket, argument.c_str());
 					}
 					else
 					{
@@ -177,7 +175,7 @@ static void ProcessScript(RSocket &a_socket, const char *a_scriptName)
 				{
 					if (!argument.empty())
 					{
-						handler = std::make_shared<CGet>(&a_socket, argument.c_str());
+						handler = new CGet(&a_socket, argument.c_str());
 					}
 					else
 					{
@@ -188,7 +186,7 @@ static void ProcessScript(RSocket &a_socket, const char *a_scriptName)
 				{
 					if (!argument.empty())
 					{
-						handler = std::make_shared<CSend>(&a_socket, argument.c_str());
+						handler = new CSend(&a_socket, argument.c_str());
 					}
 					else
 					{
@@ -197,7 +195,7 @@ static void ProcessScript(RSocket &a_socket, const char *a_scriptName)
 				}
 				else if (command == "shutdown")
 				{
-					handler = std::make_shared<CShutdown>(&a_socket);
+					handler = new CShutdown(&a_socket);
 				}
 				else
 				{
@@ -208,7 +206,7 @@ static void ProcessScript(RSocket &a_socket, const char *a_scriptName)
 				{
 					printf("Sending request \"%s\"\n", command.c_str());
 					handler->sendRequest();
-					handler = nullptr;
+					delete handler;
 				}
 			}
 		}
@@ -243,9 +241,10 @@ static void StartClient()
 
 			/* And check whether the server's protocol version is supported.  This handler will */
 			/* display an error and exit if it is not */
-			std::shared_ptr<CHandler> handler = std::make_shared<CVersion>(&socket);
+			CHandler *handler = new CVersion(&socket);
 
 			handler->sendRequest();
+			delete handler;
 			handler = nullptr;
 
 			if (g_args[ARGS_SCRIPT] != nullptr)
@@ -256,23 +255,23 @@ static void StartClient()
 			{
 				if (g_args[ARGS_DIR] != nullptr)
 				{
-					handler = std::make_shared<CDir>(&socket, g_args[ARGS_DIR]);
+					handler = new CDir(&socket, g_args[ARGS_DIR]);
 				}
 				else if (g_args[ARGS_EXECUTE] != nullptr)
 				{
-					handler = std::make_shared<CExecute>(&socket, g_args[ARGS_EXECUTE]);
+					handler = new CExecute(&socket, g_args[ARGS_EXECUTE]);
 				}
 				else if (g_args[ARGS_GET] != nullptr)
 				{
-					handler = std::make_shared<CGet>(&socket, g_args[ARGS_GET]);
+					handler = new CGet(&socket, g_args[ARGS_GET]);
 				}
 				else if (g_args[ARGS_SEND] != nullptr)
 				{
-					handler = std::make_shared<CSend>(&socket, g_args[ARGS_SEND]);
+					handler = new CSend(&socket, g_args[ARGS_SEND]);
 				}
 				else if (g_args[ARGS_SHUTDOWN] != nullptr)
 				{
-					handler = std::make_shared<CShutdown>(&socket);
+					handler = new CShutdown(&socket);
 				}
 				else
 				{
@@ -282,7 +281,7 @@ static void StartClient()
 				if (handler != nullptr)
 				{
 					handler->sendRequest();
-					handler = nullptr;
+					delete handler;
 				}
 			}
 
@@ -361,35 +360,35 @@ static void StartServer()
 
 								printf("Received request \"%s\"\n", g_commandNames[command.m_command]);
 
-								std::shared_ptr<CHandler> handler;
+								CHandler *handler = nullptr;
 
 								if (command.m_command == EDelete)
 								{
-									handler = std::make_shared<CDelete>(&socket, command);
+									handler = new CDelete(&socket, command);
 								}
 								else if (command.m_command == EDir)
 								{
-									handler = std::make_shared<CDir>(&socket, command);
+									handler = new CDir(&socket, command);
 								}
 								else if (command.m_command == EExecute)
 								{
-									handler = std::make_shared<CExecute>(&socket, command);
+									handler = new CExecute(&socket, command);
 								}
 								else if (command.m_command == EFileInfo)
 								{
-									handler = std::make_shared<CFileInfo>(&socket, command);
+									handler = new CFileInfo(&socket, command);
 								}
 								else if (command.m_command == EGet)
 								{
-									handler = std::make_shared<CGet>(&socket, command);
+									handler = new CGet(&socket, command);
 								}
 								else if (command.m_command == ERename)
 								{
-									handler = std::make_shared<CRename>(&socket, command);
+									handler = new CRename(&socket, command);
 								}
 								else if (command.m_command == ESend)
 								{
-									handler = std::make_shared<CSend>(&socket, command);
+									handler = new CSend(&socket, command);
 								}
 								else if (command.m_command == EShutdown)
 								{
@@ -398,7 +397,7 @@ static void StartServer()
 								}
 								else if (command.m_command == EVersion)
 								{
-									handler = std::make_shared<CVersion>(&socket, command);
+									handler = new CVersion(&socket, command);
 								}
 								else
 								{
@@ -409,7 +408,7 @@ static void StartServer()
 								if (handler != nullptr)
 								{
 									handler->execute();
-									handler = nullptr;
+									delete handler;
 								}
 							}
 							else if (selectResult == -1)
