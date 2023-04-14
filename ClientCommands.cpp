@@ -50,7 +50,7 @@ void CDir::sendRequest()
 		{
 			name = reinterpret_cast<char *>(payload);
 			payload += strlen(name) + 1;
-			STREAM_INT(size, payload);
+			READ_INT(size, payload);
 			payload += sizeof(size);
 			printf("%s %d\n", name, size);
 
