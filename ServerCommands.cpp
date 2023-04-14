@@ -10,20 +10,6 @@
 
 #include <sys/wait.h>
 
-#define WRITE_INT(Dest, Value) \
-	*Dest = Value & 0xff; \
-	*(Dest + 1) = (Value >> 8) & 0xff; \
-	*(Dest + 2) = (Value >> 16) & 0xff; \
-	*(Dest + 3) = (Value >> 24) & 0xff
-
-#else /* ! __amigaos__ */
-
-#define WRITE_INT(Dest, Value) \
-	*Dest = (Value >> 24) & 0xff; \
-	*(Dest + 1) = (Value >> 16) & 0xff; \
-	*(Dest + 2) = (Value >> 8) & 0xff; \
-	*(Dest + 3) = Value & 0xff
-
 #endif /* ! __amigaos__ */
 
 /**
