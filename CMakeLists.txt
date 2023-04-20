@@ -19,7 +19,8 @@ set(sourceFiles ${sourceFiles} "ClientCommands.cpp")
 set(sourceFiles ${sourceFiles} "Execute.cpp")
 set(sourceFiles ${sourceFiles} "ServerCommands.cpp")
 
-find_package(Qt5 COMPONENTS Core Widgets)
+find_library(StdFuncs StdFuncs PATHS ../StdFuncs PATH_SUFFIXES build)
+find_package(Qt5 COMPONENTS Core Gui Widgets)
 
 if(${Qt5_FOUND} EQUAL 1)
 	message(STATUS "Configuring using Qt5 directory ${Qt5_DIR}")
@@ -30,11 +31,13 @@ if(${Qt5_FOUND} EQUAL 1)
 
 	add_executable(RADRunner ${sourceFiles})
 	add_compile_definitions(QT_GUI_LIB)
-	target_link_libraries(RADRunner Qt5::Core Qt5::Widgets)
+	target_link_libraries(RADRunner ${StdFuncs})
+	target_link_libraries(RADRunner Qt5::Core Qt5::Gui Qt5::Widgets)
 else()
 	message(STATUS "Qt5 not found, configuring basic build")
 
 	add_executable(RADRunner ${sourceFiles})
+	target_link_libraries(RADRunner ${StdFuncs})
 endif()
 
 set_property(TARGET RADRunner PROPERTY CXX_STANDARD 14)
@@ -46,9 +49,6 @@ if(MSVC)
 endif()
 
 target_include_directories(RADRunner PRIVATE "../StdFuncs")
-
-find_library(StdFuncs StdFuncs PATHS ../StdFuncs PATH_SUFFIXES build)
-target_link_libraries(RADRunner ${StdFuncs})
 
 if(WIN32)
 	target_link_libraries(RADRunner "ws2_32")
