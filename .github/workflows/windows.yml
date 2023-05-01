@@ -1,4 +1,4 @@
-name: Linux
+name: Windows
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
       - name: Checkout
@@ -21,19 +21,27 @@ jobs:
       - name: Download Libraries
         run: |
           mv StdFuncs ..
-          gh run download --repo hitman-codehq/StdFuncs --name Linux-Libraries --dir ../StdFuncs
+          gh run download --repo hitman-codehq/StdFuncs --name Windows-Libraries --dir ../StdFuncs
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v1.1
+        with:
+          vs-version: '16.0'
       - name: Build
         run: |
-          make
+          msbuild /p:Configuration=Release /p:Platform=x86
+          msbuild /p:Configuration=Release /p:Platform=x64
       - name: Build Debug
         run: |
-          make DEBUG=1
+          msbuild /p:Configuration=Debug /p:Platform=x86
+          msbuild /p:Configuration=Debug /p:Platform=x64
       - name: Archive Executables
         uses: actions/upload-artifact@v3
         with:
-          name: Linux-Executables
+          name: Windows-Executables
           path: |
-            Debug/RADRunner
-            Release/RADRunner
+            Win32/Debug/*.exe
+            x64/Debug/*.exe
+            Win32/Release/*.exe
+            x64/Release/*.exe
