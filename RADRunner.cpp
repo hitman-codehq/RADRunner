@@ -14,15 +14,16 @@
 
 #endif /* ! WIN32 */
 
-#define ARGS_REMOTE 0
-#define ARGS_DIR 1
-#define ARGS_EXECUTE 2
-#define ARGS_GET 3
+#define ARGS_DIR 0
+#define ARGS_EXECUTE 1
+#define ARGS_GET 2
+#define ARGS_PORT 3
 #define ARGS_SCRIPT 4
 #define ARGS_SEND 5
 #define ARGS_SERVER 6
 #define ARGS_SHUTDOWN 7
-#define ARGS_NUM_ARGS 8
+#define ARGS_REMOTE 8
+#define ARGS_NUM_ARGS 9
 
 #ifdef __amigaos4__
 
@@ -50,7 +51,7 @@ static const char g_accVersion[] = "$VER: RADRunner 0.01 (17.04.2021)";
 
 /* Template for use in obtaining command line parameters.  Remember to change the indexes */
 /* in Commands.h if the ordering or number of these change */
-static const char g_template[] = "REMOTE,DIR/K,EXECUTE/K,GET/K,SCRIPT/K,SEND/K,SERVER/S,SHUTDOWN/S";
+static const char g_template[] = "DIR/K,EXECUTE/K,GET/K,PORT/K,SCRIPT/K,SEND/K,SERVER/S,SHUTDOWN/S,REMOTE";
 
 static volatile bool g_break;		/* Set to true if when ctrl-c is hit by the user */
 static RArgs g_args;				/* Contains the parsed command line arguments */
@@ -226,15 +227,16 @@ static void ProcessScript(RSocket &a_socket, const char *a_scriptName)
  * the end of this, it will close the connection to the server.
  *
  * @date	Tuesday 27-Apr-2021 6:33 am, Code HQ Bergmannstrasse
+ * @param	a_port			The port to which to connect
  */
 
-static void StartClient()
+static void StartClient(unsigned short a_port)
 {
 	RSocket socket;
 
 	if (g_args[ARGS_REMOTE] != nullptr)
 	{
-		if (socket.open(g_args[ARGS_REMOTE], 80) == KErrNone)
+		if (socket.open(g_args[ARGS_REMOTE], a_port) == KErrNone)
 		{
 			/* Start by sending a signature, to identify us as a RADRunner client */
 			socket.write(g_signature, 4);
@@ -305,9 +307,10 @@ static void StartClient()
  * the end of this, it will close the connection to the client and wait for a new connection to come in.
  *
  * @date	Sunday 17-Nov-2019 3:29 pm, Sankt Oberholz
+ * @param	a_port			The port on which to listen for connections
  */
 
-static void StartServer()
+static void StartServer(unsigned short a_port)
 {
 	bool shutdown = false;
 	int result, selectResult;
@@ -317,9 +320,9 @@ static void StartServer()
 
 	printf("Starting RADRunner server\n");
 
-	if ((result = socket.open(nullptr, 80)) == KErrNone)
+	if ((result = socket.open(nullptr, a_port)) == KErrNone)
 	{
-		if ((result = socket.listen(80)) == KErrNone)
+		if ((result = socket.listen(a_port)) == KErrNone)
 		{
 			do
 			{
@@ -469,7 +472,7 @@ static void StartServer()
 
 int main(int a_argc, const char *a_argv[])
 {
-	int result;
+	int port = 80, result;
 
 	/* Install a ctrl-c handler so we can handle ctrl-c being pressed and shut down the scan */
 	/* properly */
@@ -482,13 +485,21 @@ int main(int a_argc, const char *a_argv[])
 	{
 		try
 		{
+			if (g_args[ARGS_PORT] != nullptr)
+			{
+				if (Utils::StringToInt(g_args[ARGS_PORT], &port) != KErrNone)
+				{
+					Utils::Error("Invalid port specified, using default port %d", port);
+				}
+			}
+
 			if (g_args[ARGS_SERVER] != nullptr)
 			{
-				StartServer();
+				StartServer(static_cast<unsigned short>(port));
 			}
 			else
 			{
-				StartClient();
+				StartClient(static_cast<unsigned short>(port));
 			}
 		}
 		catch(std::runtime_error &a_exception)
