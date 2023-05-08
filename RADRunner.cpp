@@ -3,6 +3,7 @@
 #include <Args.h>
 #include <Lex.h>
 #include <StdTextFile.h>
+#include <memory>
 #include <signal.h>
 #include <string.h>
 #include <vector>
@@ -238,53 +239,62 @@ static void StartClient(unsigned short a_port)
 	{
 		if (socket.open(g_args[ARGS_REMOTE], a_port) == KErrNone)
 		{
-			/* Start by sending a signature, to identify us as a RADRunner client */
-			socket.write(g_signature, 4);
-
-			/* And check whether the server's protocol version is supported.  This handler will */
-			/* display an error and exit if it is not */
-			CHandler *handler = new CVersion(&socket);
-
-			handler->sendRequest();
-			delete handler;
-			handler = nullptr;
-
-			if (g_args[ARGS_SCRIPT] != nullptr)
+			try
 			{
-				ProcessScript(socket, g_args[ARGS_SCRIPT]);
-			}
-			else
-			{
-				if (g_args[ARGS_DIR] != nullptr)
+				/* Start by sending a signature, to identify us as a RADRunner client */
+				socket.write(g_signature, 4);
+
+				/* Handlers are stored in a shared_ptr so that they are freed if an exception */
+				/* occurs, but we allocate them with new (rather than std::make_shared()) as we */
+				/* need them to be zero initialised by MungWall */
+				std::shared_ptr<CHandler> handler(new CVersion(&socket));
+
+				/* Check whether the server's protocol version is supported.  This handler will */
+				/* display an error and exit if it is not */
+				handler->sendRequest();
+				handler = nullptr;
+
+				if (g_args[ARGS_SCRIPT] != nullptr)
 				{
-					handler = new CDir(&socket, g_args[ARGS_DIR]);
-				}
-				else if (g_args[ARGS_EXECUTE] != nullptr)
-				{
-					handler = new CExecute(&socket, g_args[ARGS_EXECUTE]);
-				}
-				else if (g_args[ARGS_GET] != nullptr)
-				{
-					handler = new CGet(&socket, g_args[ARGS_GET]);
-				}
-				else if (g_args[ARGS_SEND] != nullptr)
-				{
-					handler = new CSend(&socket, g_args[ARGS_SEND]);
-				}
-				else if (g_args[ARGS_SHUTDOWN] != nullptr)
-				{
-					handler = new CShutdown(&socket);
+					ProcessScript(socket, g_args[ARGS_SCRIPT]);
 				}
 				else
 				{
-					Utils::Error("Unknown command");
-				}
+					if (g_args[ARGS_DIR] != nullptr)
+					{
+						handler = std::shared_ptr<CHandler>(new CDir(&socket, g_args[ARGS_DIR]));
+					}
+					else if (g_args[ARGS_EXECUTE] != nullptr)
+					{
+						handler = std::shared_ptr<CHandler>(new CExecute(&socket, g_args[ARGS_EXECUTE]));
+					}
+					else if (g_args[ARGS_GET] != nullptr)
+					{
+						handler = std::shared_ptr<CHandler>(new CGet(&socket, g_args[ARGS_GET]));
+					}
+					else if (g_args[ARGS_SEND] != nullptr)
+					{
+						handler = std::shared_ptr<CHandler>(new CSend(&socket, g_args[ARGS_SEND]));
+					}
+					else if (g_args[ARGS_SHUTDOWN] != nullptr)
+					{
+						handler = std::shared_ptr<CHandler>(new CShutdown(&socket));
+					}
+					else
+					{
+						Utils::Error("Unknown command");
+					}
 
-				if (handler != nullptr)
-				{
-					handler->sendRequest();
-					delete handler;
+					if (handler != nullptr)
+					{
+						handler->sendRequest();
+						handler = nullptr;
+					}
 				}
+			}
+			catch (std::runtime_error& a_exception)
+			{
+				Utils::Error(a_exception.what());
 			}
 
 			socket.close();
@@ -363,44 +373,47 @@ static void StartServer(unsigned short a_port)
 
 								printf("Received request \"%s\"\n", g_commandNames[command.m_command]);
 
-								CHandler *handler = nullptr;
+								/* Handlers are stored in a shared_ptr so that they are freed if an exception */
+								/* occurs, but we allocate them with new (rather than std::make_shared()) as we */
+								/* need them to be zero initialised by MungWall */
+								std::shared_ptr<CHandler> handler(nullptr);
 
-								if (command.m_command == EDelete)
+								if (command.m_command == EVersion)
 								{
-									handler = new CDelete(&socket, command);
+									handler = std::shared_ptr<CHandler>(new CVersion(&socket, command));
+								}
+								else if (command.m_command == EDelete)
+								{
+									handler = std::shared_ptr<CHandler>(new CDelete(&socket, command));
 								}
 								else if (command.m_command == EDir)
 								{
-									handler = new CDir(&socket, command);
+									handler = std::shared_ptr<CHandler>(new CDir(&socket, command));
 								}
 								else if (command.m_command == EExecute)
 								{
-									handler = new CExecute(&socket, command);
+									handler = std::shared_ptr<CHandler>(new CExecute(&socket, command));
 								}
 								else if (command.m_command == EFileInfo)
 								{
-									handler = new CFileInfo(&socket, command);
+									handler = std::shared_ptr<CHandler>(new CFileInfo(&socket, command));
 								}
 								else if (command.m_command == EGet)
 								{
-									handler = new CGet(&socket, command);
+									handler = std::shared_ptr<CHandler>(new CGet(&socket, command));
 								}
 								else if (command.m_command == ERename)
 								{
-									handler = new CRename(&socket, command);
+									handler = std::shared_ptr<CHandler>(new CRename(&socket, command));
 								}
 								else if (command.m_command == ESend)
 								{
-									handler = new CSend(&socket, command);
+									handler = std::shared_ptr<CHandler>(new CSend(&socket, command));
 								}
 								else if (command.m_command == EShutdown)
 								{
 									printf("shutdown: Exiting\n");
 									shutdown = true;
-								}
-								else if (command.m_command == EVersion)
-								{
-									handler = new CVersion(&socket, command);
 								}
 								else
 								{
@@ -411,7 +424,7 @@ static void StartServer(unsigned short a_port)
 								if (handler != nullptr)
 								{
 									handler->execute();
-									delete handler;
+									handler = nullptr;
 								}
 							}
 							else if (selectResult == -1)
@@ -420,7 +433,6 @@ static void StartServer(unsigned short a_port)
 							}
 						}
 					}
-
 					catch (RSocket::Error &exception)
 					{
 						/* If the result was 0 then the remote socket has been closed and we want to go back to listening. */
@@ -483,28 +495,21 @@ int main(int a_argc, const char *a_argv[])
 
 	if ((result = g_args.open(g_template, ARGS_NUM_ARGS, a_argv, a_argc)) == KErrNone)
 	{
-		try
+		if (g_args[ARGS_PORT] != nullptr)
 		{
-			if (g_args[ARGS_PORT] != nullptr)
+			if (Utils::StringToInt(g_args[ARGS_PORT], &port) != KErrNone)
 			{
-				if (Utils::StringToInt(g_args[ARGS_PORT], &port) != KErrNone)
-				{
-					Utils::Error("Invalid port specified, using default port %d", port);
-				}
-			}
-
-			if (g_args[ARGS_SERVER] != nullptr)
-			{
-				StartServer(static_cast<unsigned short>(port));
-			}
-			else
-			{
-				StartClient(static_cast<unsigned short>(port));
+				Utils::Error("Invalid port specified, using default port %d", port);
 			}
 		}
-		catch(std::runtime_error &a_exception)
+
+		if (g_args[ARGS_SERVER] != nullptr)
 		{
-			Utils::Error(a_exception.what());
+			StartServer(static_cast<unsigned short>(port));
+		}
+		else
+		{
+			StartClient(static_cast<unsigned short>(port));
 		}
 
 		g_args.close();
