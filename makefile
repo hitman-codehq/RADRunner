@@ -1,6 +1,6 @@
 
 CFLAGS = -c -fno-asynchronous-unwind-tables -std=gnu++14 -Wall -Wextra
-IFLAGS = -I../StdFuncs
+IFLAGS = -I../StdFuncs -D__USE_INLINE__
 LFLAGS = -L../StdFuncs/$(OBJ)
 LIBS = -lStdFuncs
 
