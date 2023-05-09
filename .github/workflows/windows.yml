@@ -45,3 +45,23 @@ jobs:
             x64/Debug/*.exe
             Win32/Release/*.exe
             x64/Release/*.exe
+      - name: Prepare Release Files
+        run: |
+          echo "ref: $GITHUB_REF `ncommit: $GITHUB_SHA`nbuild: $(date +"%Y-%m-%dT%H:%M:%SZ")" > ReleaseInfo.txt
+          dir
+          copy x64/Debug/RADRunner.exe ./RADRunner.debug.exe
+          copy x64/Release/RADRunner.exe .
+      - name: Update Latest Build
+        uses: andelf/nightly-release@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: latest_windows
+          name: 'Windows Latest Build $$'
+          prerelease: true
+          body: 'This is a build of the latest code pushed to GitHub. It has received basic local testing but is
+            not an official release and is not guaranteed to function correctly'
+          files: |
+            RADRunner.debug.exe
+            RADRunner.exe
+            ReleaseInfo.txt
