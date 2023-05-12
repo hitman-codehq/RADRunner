@@ -1,0 +1,68 @@
+name: Amiga OS3
+
+on:
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          repository: hitman-codehq/RADRunner
+          path: RADRunner
+      - name: Checkout StdFuncs
+        uses: actions/checkout@v3
+        with:
+          repository: hitman-codehq/StdFuncs
+          path: StdFuncs
+      - name: Download Libraries
+        run: |
+          gh run download --repo hitman-codehq/StdFuncs --name Amiga-Libraries-OS3 --dir StdFuncs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build
+        uses: hitman-codehq/Amiga-Build-OS3@v1
+        env:
+          PREFIX: m68k-amigaos-
+        with:
+          command: make
+          directory: RADRunner
+      - name: Build Debug
+        uses: hitman-codehq/Amiga-Build-OS3@v1
+        env:
+          PREFIX: m68k-amigaos-
+        with:
+          command: make DEBUG=1
+          directory: RADRunner
+      - name: Archive Executables
+        uses: actions/upload-artifact@v3
+        with:
+          name: Amiga-Executables-OS3
+          path: |
+            RADRunner/Debug/RADRunner
+            RADRunner/Release/RADRunner
+      - name: Prepare Release Files
+        run: |
+          echo -e "ref: $GITHUB_REF \ncommit: $GITHUB_SHA\nbuild: $(date +"%Y-%m-%dT%H:%M:%SZ")" > ReleaseInfo.txt
+          echo -e "platform:" $(uname -a) >> ReleaseInfo.txt
+          cp -a RADRunner/Debug/RADRunner ./RADRunner.debug
+      - name: Update Latest Build
+        uses: andelf/nightly-release@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: latest_amiga_os3
+          name: 'Amiga OS3 Latest Build $$'
+          prerelease: true
+          body: 'This is a build of the latest code pushed to GitHub. It has received basic local testing but is
+            not an official release and is not guaranteed to function correctly'
+          files: |
+            RADRunner.debug
+            RADRunner/Release/RADRunner
+            ReleaseInfo.txt
