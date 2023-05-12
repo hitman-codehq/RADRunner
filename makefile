@@ -27,10 +27,8 @@ else
 	CFLAGS += -O2
 endif
 
-UNAME = $(shell uname)
-
 ifdef PREFIX
-	ifeq ($(UNAME), CYGWIN_NT-10.0)
+	ifeq ($(PREFIX), ppc-amigaos-)
 		CFLAGS += -athread=native
 		LFLAGS += -athread=native
 		OBJ := $(OBJ)_OS4
