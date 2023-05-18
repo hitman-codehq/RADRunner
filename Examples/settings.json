@@ -1,0 +1,20 @@
+{
+    "makefile.configurations": [
+        {
+            "name": "OS3 Debug",
+            "makeArgs": ["-j4", "DEBUG=1"],
+            "problemMatchers": ["$gcc", "$unknown"]
+        }
+    ],
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "d:\\Source\\RADRunner",
+            "binaryPath": "d:\\Utils\\Windows\\RADRunner.exe",
+            "binaryArgs": [
+                "vampire",
+                "script",
+                "Examples\\SendAndExecute.rad"
+            ]
+        }
+    ]
+}

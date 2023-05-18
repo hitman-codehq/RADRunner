@@ -1,0 +1,3 @@
+# Compile a project on the remote server and fetch the binary
+execute make
+get <executable_name>

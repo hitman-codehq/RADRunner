@@ -1,0 +1,58 @@
+{
+    "configurations": [
+        {
+            "name": "AmigaOS3",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "../StdFuncs",
+                "c:/amiga-gcc/lib/gcc/m68k-amigaos/6.5.0b/include/c++",
+                "c:/amiga-gcc/lib/gcc/m68k-amigaos/6.5.0b/include/c++/m68k-amigaos",
+                "c:/amiga-gcc/m68k-amigaos/clib2/include",
+                "c:/amiga-gcc/m68k-amigaos/ndk-include",
+                "c:/amiga-gcc/m68k-amigaos/sys-include"
+            ],
+            "defines": [
+                "__amigaos__",
+                "_DEBUG",
+                "MUNGWALL_NO_LINE_TRACKING"
+            ],
+            "compilerPath": "c:/amiga-gcc/bin/m68k-amigaos-g++.exe",
+            "cStandard": "c11",
+            "cppStandard": "c++14",
+            "intelliSenseMode": "gcc-x64",
+            "configurationProvider": "ms-vscode.makefile-tools"
+        },
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/../StdFuncs",
+                "c:/Program Files (x86)/Windows Kits/10/Include/10.0.18362.0/um"
+            ],
+            "defines": [
+                "_DEBUG"
+            ],
+            "cStandard": "c11",
+            "cppStandard": "c++14",
+            "intelliSenseMode": "msvc-x64",
+            "configurationProvider": "ms-vscode.cmake-tools"
+        },
+        {
+            "name": "Win32 GCC",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/../StdFuncs"
+            ],
+            "defines": [
+                "__unix__",
+                "_DEBUG"
+            ],
+            "compilerPath": "d:/Coding/MingW/bin/g++.exe",
+            "cStandard": "c11",
+            "cppStandard": "c++14",
+            "intelliSenseMode": "gcc-x64",
+            "configurationProvider": "ms-vscode.cmake-tools"
+        }
+    ],
+    "version": 4
+}
