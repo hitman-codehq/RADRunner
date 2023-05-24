@@ -33,9 +33,9 @@ ifdef PREFIX
 		LFLAGS += -athread=native
 		OBJ := $(OBJ)_OS4
 	else
-		IFLAGS += -mcrt=nix20
-		LFLAGS += -mcrt=nix20
-		LIBS += -ldebug -lsocket
+		IFLAGS += -mcrt=clib2
+		LFLAGS += -mcrt=clib2
+		LIBS += -lnet
 	endif
 endif
 
