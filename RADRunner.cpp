@@ -292,7 +292,7 @@ static void StartClient(unsigned short a_port)
 					}
 				}
 			}
-			catch (std::runtime_error& a_exception)
+			catch (RSocket::Error &a_exception)
 			{
 				Utils::Error(a_exception.what());
 			}
@@ -433,13 +433,13 @@ static void StartServer(unsigned short a_port)
 							}
 						}
 					}
-					catch (RSocket::Error &exception)
+					catch (RSocket::Error &a_exception)
 					{
 						/* If the result was 0 then the remote socket has been closed and we want to go back to listening. */
 						/* Otherwise it is a "real" socket error, so display an error and shut down */
-						if (exception.m_result != 0)
+						if (a_exception.m_result != 0)
 						{
-							printf("Unable to perform I/O on socket (Error = %d)!\n", exception.m_result);
+							printf("Unable to perform I/O on socket (Error = %d)!\n", a_exception.m_result);
 							shutdown = true;
 						}
 					}
