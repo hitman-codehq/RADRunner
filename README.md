@@ -184,11 +184,11 @@ making automation of multiple commands difficult.
 Perhaps in the future RADRunner will receive a more sophisticated server mode, which can accept multiple connections
 at a time and scripts won't be necessary, or perhaps the script system will be extended to use a proper parser.
 
-# Commands
+## Commands
 
 This is a list of the commands currently supported by RADRunner.
 
-## DIR/K \<dirname\>
+### DIR/K \<dirname\>
 
 Lists the contents of the given directory on the remote server.  For example:
 
@@ -201,7 +201,7 @@ in which RADRunner is executing).  However, the Amiga OS versions of RADRunner u
 argument parsing functions, which don't allow "" to be passed in.  (they consider this to be a missing argument).  This
 can be worked around by using `DIR """"`.  This applies to all commands that refer to the current directory.
 
-## EXECUTE/K \<filename\>
+### EXECUTE/K \<filename\>
 
 Executes a file on the remote server.  Both the EXECUTE keyword and the filename must be specified.  If the filename
 contains no path or a relative path then it is executed from the server's current directory.  If it contains a path
@@ -228,13 +228,13 @@ execute: Command complete
 Note that currently, output will only be captured if the RADRunner server is running on a Windows PC.  If it is running
 on Amiga OS or UNIX then it will still be executed, but no output will be sent back to the client (yet).
 
-## GET/K \<filename\>
+### GET/K \<filename\>
 
 Downloads a file from the remote server.  The same rules for path handling apply as for the EXECUTE command.  When
 received, the file will be written into the current directory and its timestamp will be set to match the timestamp
 on the original file.  Protection bits such as the script bit (on Amiga OS) are not currently preserved.
 
-## PORT/K \<port\>
+### PORT/K \<port\>
 
 This command is meant to be used in conjunction with other commands, to direct RADRunner to use a different port to the
 default, which is port 80.  This is useful when that port is being used for something else or is blocked.
@@ -251,12 +251,12 @@ And to use that from a remote computer:
 d:\Source> RADRunner vampire PORT 68000 DIR RAM:
 ```
 
-## SCRIPT/K \<filename\>
+### SCRIPT/K \<filename\>
 
 Executes a number of commands inside the RADRunner script file specified by \<filename\>.  See the section "Script Support"
 for further information.
 
-## SEND/K \<filename\>
+### SEND/K \<filename\>
 
 Uploads a file to the remote server.  The filename can specify an absolute or relative path on the client computer, or
 it can be in the current directory.  However, any path component specified is stripped upon sending and only the filename
@@ -279,15 +279,15 @@ command to execute a script that is already on the target computer, which can mo
 
 Like the GET command, the timestamp is preserved during the transfer, but protection bits are not.
 
-## SERVER
+### SERVER
 
 Starts RADRunner in server mode, causing it to listen to incoming connections from other instances of RADRunner.
 
-## SHUTDOWN
+### SHUTDOWN
 
 Shuts down the remote instance of RADRunner, when it's 3 am and time to go to bed.
 
-# More advanced uses
+## More advanced uses
 
 You may have noticed that some examples use "$ RADRunner" and some use "d:\Source> RADRunner".  This is to show that
 RADRunner is truly a cross-platform utility and can be used on Amiga OS, Linux, Mac OS or Windows, with any of these
@@ -296,7 +296,7 @@ platforms acting as a server and any platform acting as a client.
 This allows some imaginative uses of RADRunner, to suit the way that _you_ want to work.  Here are my (Colin Ward AKA
 Hitman/Code HQ) two favourites.
 
-## Favourite 1: Remote integrated development from Visual Studio Code on a PC or Mac
+### Favourite 1: Remote integrated development from Visual Studio Code on a PC or Mac
 
 In this scenario, we wish to use Visual Studio Code and its wonderful code lookup features to edit and compile our code,
 but we need to run it on either a real Amiga or an emulator.
@@ -442,7 +442,7 @@ Linux and Mac OS.  To activate Amiga OS as a target, simply open a .cpp file in 
 type __"C/C++: Select a Configuration..."__ and select "AmigaOS3", or activate it from the "Select Language Mode" button on
 the bottom right of the VS Code window.
 
-## Favourite 2: Native development on Amiga OS with remote compilation
+### Favourite 2: Native development on Amiga OS with remote compilation
 
 In this scenario, we wish to develop on the Amiga itself, using our favourite text editor, with the source code on a
 remote PC or Mac.
@@ -514,7 +514,7 @@ directory.  They work with RADRunner by default, but you edit and use in your ow
 the name or IP address of your PC and \<executable_name\> to the name of the executable that is built.  Remember to type
 "protect make +s" on the Amiga to make the "make" script executable, as this can't be saved by git!
 
-# Compiling
+## Compiling
 
 To build RADRunner, you need a cross-platform framework called "The Framework" (yes, a very imaginitive name!), which
 is available on GitHub [here](https://github.com/hitman-codehq/StdFuncs).  Clone both repos to the same directory, like
@@ -533,7 +533,7 @@ for information on how to build for all platforms.  Once built, come back to the
 If you are building RADRunner on Windows, simply load the RADRunner.sln solution into Visual Studio and The Framework
 will be automatically built as a dependency when RADRunner is built.
 
-# Future
+## Future
 
 The creation of RADRunner was prompted by my purchase of a wonderful Vampire 4 Standalone system and the desire to
 program it in a more modern way than what was provided natively on an OS3 based Amiga.  Some ideas for the future are:
