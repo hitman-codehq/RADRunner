@@ -67,7 +67,7 @@ void CDir::execute()
 		if ((result = dir.read(entries, EDirSortNameAscending)) == KErrNone)
 		{
 			char *payload;
-			size_t offset = 0;
+			size_t nameLength, offset = 0;
 			uint32_t payloadSize = 1;
 
 			/* Iterate through the list of files and determine the amount of memory required to store the filenames */
@@ -81,15 +81,19 @@ void CDir::execute()
 			}
 
 			/* Allocate a buffer large enough to hold the response payload and fill it with the file information */
+			printf("payloadSize = %u\n", payloadSize);
 			payload = new char[payloadSize];
 
 			entry = entries->getHead();
 
 			while (entry != nullptr)
 			{
-				memcpy(payload + offset, entry->iName, strlen(entry->iName) + 1);
-				offset += strlen(entry->iName) + 1;
-				WRITE_INT((payload + offset), entry->iSize);
+				nameLength = strlen(entry->iName);
+				printf("Adding %s of length %lld\n", entry->iName, entry->iSize);
+				printf("Adding %s of length %u %x\n", entry->iName, (uint32_t) entry->iSize, (uint32_t) entry->iSize);
+				memcpy(payload + offset, entry->iName, nameLength + 1);
+				offset += nameLength + 1;
+				WRITE_INT_64((payload + offset), entry->iSize);
 				offset += sizeof(entry->iSize);
 
 				entry = entries->getSucc(entry);
