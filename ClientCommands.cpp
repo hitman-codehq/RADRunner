@@ -40,8 +40,10 @@ void CDir::sendRequest()
 	if (m_response.m_result == KErrNone)
 	{
 		char *name;
-		uint32_t size;
+		TInt64 size;
 		unsigned char *payload = m_responsePayload, *payloadEnd = m_responsePayload + m_response.m_size;
+
+		printf("payloadSize = %u\n", m_response.m_size);
 
 		/* Iterate through the file information in the payload and display its contents.  Provided the payload */
 		/* is structured correctly, we could just check for it being ended by NULL terminator, but in the */
@@ -49,10 +51,12 @@ void CDir::sendRequest()
 		while (payload < payloadEnd && *payload != '\0')
 		{
 			name = reinterpret_cast<char *>(payload);
+			printf("%s\n", name);
 			payload += strlen(name) + 1;
-			READ_INT(size, payload);
+			READ_INT_64(size, payload);
 			payload += sizeof(size);
-			printf("%s %d\n", name, size);
+			printf("%s %lld\n", name, size);
+			printf("%s %u %x\n", name, (uint32_t) size, (uint32_t) size);
 
 			ASSERTM((payload < payloadEnd), "CDir::sendRequest() => Payload contents do not match its size");
 		}
