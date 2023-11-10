@@ -231,9 +231,10 @@ static void ProcessScript(RSocket &a_socket, const char *a_scriptName)
  * @param	a_port			The port to which to connect
  */
 
-static void StartClient(unsigned short a_port)
+static TResult StartClient(unsigned short a_port)
 {
 	RSocket socket;
+	TResult retVal{ KErrNone, 0 };
 
 	if (g_args[ARGS_REMOTE] != nullptr)
 	{
@@ -287,7 +288,7 @@ static void StartClient(unsigned short a_port)
 
 					if (handler != nullptr)
 					{
-						handler->sendRequest();
+						retVal = handler->sendRequest();
 						handler = nullptr;
 					}
 				}
@@ -308,6 +309,8 @@ static void StartClient(unsigned short a_port)
 	{
 		Utils::Error("REMOTE argument must be specified");
 	}
+
+	return retVal;
 }
 
 /**
@@ -485,6 +488,7 @@ static void StartServer(unsigned short a_port)
 int main(int a_argc, const char *a_argv[])
 {
 	int port = 80, result;
+	TResult clientResult{KErrNone, 0};
 
 	/* Install a ctrl-c handler so we can handle ctrl-c being pressed and shut down the scan */
 	/* properly */
@@ -509,7 +513,7 @@ int main(int a_argc, const char *a_argv[])
 		}
 		else
 		{
-			StartClient(static_cast<unsigned short>(port));
+			clientResult = StartClient(static_cast<unsigned short>(port));
 		}
 
 		g_args.close();
@@ -526,5 +530,16 @@ int main(int a_argc, const char *a_argv[])
 		}
 	}
 
-	return((result == KErrNone) ? RETURN_OK : RETURN_ERROR);
+	/* In order to enable the user to differentiate between failure due to RADRunner itself having an error, and */
+	/* failure due to the software launched by the execute command returning an error, we will return the standard */
+	/* AmigaOS RETURN_ERROR error for RADRunner errors and the negative error returned by the execute command for */
+	/* execution errors */
+	if (clientResult.m_result == KErrNone)
+	{
+		return (clientResult.m_subResult == 0) ? RETURN_OK : -clientResult.m_subResult;
+	}
+	else
+	{
+		return RETURN_ERROR;
+	}
 }

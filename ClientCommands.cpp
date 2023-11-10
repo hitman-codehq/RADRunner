@@ -13,8 +13,9 @@
  * @date	Wednesday 08-Mar-2023 7:50 am, Code HQ Tokyo Tsukuda
  */
 
-void CDelete::sendRequest()
+TResult CDelete::sendRequest()
 {
+	return TResult{};
 }
 
 /**
@@ -26,7 +27,7 @@ void CDelete::sendRequest()
  * @date	Wednesday 11-Jan-2023 6:52 am, Code HQ Tokyo Tsukuda
  */
 
-void CDir::sendRequest()
+TResult CDir::sendRequest()
 {
 	int32_t payloadSize = static_cast<int32_t>(strlen(m_directoryName) + 1);
 
@@ -42,8 +43,6 @@ void CDir::sendRequest()
 		char *name;
 		TInt64 size;
 		unsigned char *payload = m_responsePayload, *payloadEnd = m_responsePayload + m_response.m_size;
-
-		printf("payloadSize = %u\n", m_response.m_size);
 
 		/* Iterate through the file information in the payload and display its contents.  Provided the payload */
 		/* is structured correctly, we could just check for it being ended by NULL terminator, but in the */
@@ -63,6 +62,8 @@ void CDir::sendRequest()
 	{
 		Utils::Error("Received invalid response %d", m_response.m_result);
 	}
+
+	return TResult{};
 }
 
 /**
@@ -73,65 +74,74 @@ void CDir::sendRequest()
  * @date	Wednesday 29-Jan-2020 2:13 pm, Scoot flight TR 735 to Singapore
  */
 
-void CExecute::sendRequest()
+TResult CExecute::sendRequest()
 {
 	int32_t payloadSize = static_cast<int32_t>(strlen(m_fileName) + 1);
+	bool done = false;
+	int bytesRead;
+	std::string buffer;
 
-	printf("execute: Executing file \"%s\"\n", m_fileName);
+	printf("execute: Executing command \"%s\"\n", m_fileName);
 
 	m_command.m_size = payloadSize;
 	sendCommand();
 	m_socket->write(m_fileName, payloadSize);
 
-	SResponse response;
+	/* Loop around and read the remote command's stdout and stderr output and print it out.  This */
+	/* will be terminated by two NULL terminators in a row, so search each received line for these */
+	/* and, when found, break out of the loop */
+	char streamData;
 
-	/* Read the response to the request and if it was successful, stream the response data */
+	do
+	{
+		if ((bytesRead = m_socket->read(&streamData, 1, false)) > 0)
+		{
+			buffer += streamData;
+
+			/* If at least two bytes have been received then check for them both being NULL */
+			if (buffer.length() >= 2)
+			{
+				if ((buffer[buffer.length() - 1] == 0) && (buffer[buffer.length()] == 0))
+				{
+					printf("execute: Command complete\n");
+					done = true;
+				}
+			}
+
+			if (streamData == '\n')
+			{
+				printf("%s", buffer.c_str());
+				buffer.clear();
+			}
+		}
+		else
+		{
+			done = true;
+		}
+	}
+	while (!done);
+
+	/* Read the response to the request and return it to the calling method as a TResult */
+	TResponse response;
+
 	m_socket->read(&response, sizeof(response));
-
 	SWAP(&response.m_result);
+	SWAP(&response.m_subResult);
 
 	if (response.m_result == KErrNone)
 	{
-		bool done = false;
-		char *buffer = new char[STDOUT_BUFFER_SIZE];
-		int bytesRead;
-
-		/* Loop around and read the remote command's stdout and stderr output and print it out.  This */
-		/* will be terminated by two NULL terminators in a row, so search each received line for these */
-		/* and, when found, break out of the loop */
-		do
+		if (response.m_subResult != 0)
 		{
-			if ((bytesRead = m_socket->read(buffer, (STDOUT_BUFFER_SIZE - 1), false)) > 0)
-			{
-				buffer[bytesRead] = '\0';
-				printf("%s", buffer);
-
-				/* If at least two bytes have been received then check for them both being NULL */
-				if (bytesRead >= 2)
-				{
-					for (int index = 0; index < (bytesRead - 1); ++index)
-					{
-						if ((buffer[index] == 0) && (buffer[index + 1] == 0))
-						{
-							printf("execute: Command complete\n");
-							done = true;
-						}
-					}
-				}
-			}
-			else
-			{
-				done = true;
-			}
+			printf("execute: Remote command \"%s\" was launched successfully but returned failure (error %d)\n", m_fileName,
+				response.m_subResult);
 		}
-		while (!done);
-
-		delete [] buffer;
 	}
 	else
 	{
-		Utils::Error("Received invalid response %d", response.m_result);
+		printf("execute: Unable to launch remote command \"%s\" (error %d)\n", m_fileName, response.m_result);
 	}
+
+	return TResult{response.m_result, response.m_subResult};
 }
 
 /**
@@ -142,8 +152,9 @@ void CExecute::sendRequest()
  * @date	Friday 24-Feb-2023 8:10 am, Code HQ Tokyo Tsukuda
  */
 
-void CFileInfo::sendRequest()
+TResult CFileInfo::sendRequest()
 {
+	return TResult{};
 }
 
 /**
@@ -155,7 +166,7 @@ void CFileInfo::sendRequest()
  * @date	Saturday 16-Jan-2021 11:56 am, Code HQ Bergmannstrasse
  */
 
-void CGet::sendRequest()
+TResult CGet::sendRequest()
 {
 	int32_t payloadSize = static_cast<int32_t>(strlen(m_fileName) + 1);
 
@@ -183,6 +194,8 @@ void CGet::sendRequest()
 	{
 		Utils::Error("Received invalid response %d", m_response.m_result);
 	}
+
+	return TResult{};
 }
 
 /**
@@ -193,8 +206,9 @@ void CGet::sendRequest()
  * @date	Saturday 11-Mar-2023 6:47 am, Code HQ Tokyo Tsukuda
  */
 
-void CRename::sendRequest()
+TResult CRename::sendRequest()
 {
+	return TResult{};
 }
 
 /**
@@ -205,7 +219,7 @@ void CRename::sendRequest()
  * @date	Sunday 17-Nov-2019 3:30 pm, Sankt Oberholz
  */
 
-void CSend::sendRequest()
+TResult CSend::sendRequest()
 {
 	TEntry entry;
 
@@ -216,7 +230,7 @@ void CSend::sendRequest()
 	{
 		Utils::Error("Unable to open file \"%s\"", m_fileName);
 
-		return;
+		return TResult{};
 	}
 
 	/* If the file specified is actually a directory then the server will be waiting for data that will */
@@ -225,7 +239,7 @@ void CSend::sendRequest()
 	{
 		Utils::Error("\"%s\" is a directory", m_fileName);
 
-		return;
+		return TResult{};
 	}
 
 	/* Strip any path component from the file as we want it to be written to the current directory */
@@ -252,6 +266,8 @@ void CSend::sendRequest()
 	sendFile(m_fileName);
 
 	delete [] reinterpret_cast<unsigned char *>(fileInfo);
+
+	return TResult{};
 }
 
 /**
@@ -261,11 +277,13 @@ void CSend::sendRequest()
  * @date	Wednesday 29-Jan-2020 2:52 pm, Scoot flight TR 735 to Singapore
  */
 
-void CShutdown::sendRequest()
+TResult CShutdown::sendRequest()
 {
 	printf("shutdown: Shutting down server\n");
 
 	sendCommand();
+
+	return TResult{};
 }
 
 /**
@@ -275,7 +293,7 @@ void CShutdown::sendRequest()
  * @date	Saturday 06-Feb-2021 6:51 am, Code HQ Bergmannstrasse
  */
 
-void CVersion::sendRequest()
+TResult CVersion::sendRequest()
 {
 	sendCommand();
 
@@ -287,4 +305,6 @@ void CVersion::sendRequest()
 	{
 		throw std::runtime_error("Incompatible server version detected, shutting down");
 	}
+
+	return TResult{};
 }

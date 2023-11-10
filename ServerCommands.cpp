@@ -29,7 +29,7 @@ void CDelete::execute()
 	printf("delete: Deleting file \"%s\"\n", fileName);
 
 	RFileUtils fileUtils;
-	SResponse response;
+	TResponse response;
 
 	/* Delete the file and return the result to the client */
 	response.m_result = fileUtils.deleteFile(fileName);
@@ -58,7 +58,7 @@ void CDir::execute()
 
 	int result;
 	RDir dir;
-	SResponse response;
+	TResponse response;
 	TEntryArray *entries;
 
 	/* Scan the specified directory and build a list of files that it contains */
@@ -138,44 +138,27 @@ void CExecute::execute()
 
 	printf("execute: Executing command \"%s\"\n", m_payload);
 
-	SResponse response;
-	response.m_size = 0;
-	response.m_result = launchCommand(reinterpret_cast<char *>(m_payload));
+	TResult result = launchCommand(reinterpret_cast<char*>(m_payload));
 
-	/* Write a failure completion code, to let the client know that it should not listen for the */
-	/* command output to be streamed */
-	if (response.m_result != KErrNone)
+	TResponse response{ result.m_result, result.m_subResult };
+	SWAP(&response.m_result);
+	SWAP(&response.m_subResult);
+
+	/* Regardless of whether the client was launched successfully then send two NULL terminators in a row.  This */
+	/* is the signal to the client that the stdout output stream has ended.  We then also send a response to signal */
+	/* the exit code of the client command in response.m_subResult */
+	char terminators[2] = { 0, 0 };
+	m_socket->write(terminators, sizeof(terminators));
+	m_socket->write(&response, sizeof(response));
+
+	if (result.m_result != KErrNone)
 	{
-		SWAP(&response.m_result);
-		m_socket->write(&response, sizeof(response));
+		printf("execute: Unable to launch command (Error = %d)\n", result.m_result);
 	}
-
-	/* If the client was launched successfully then send two NULL terminators in a row.  This is the */
-	/* signal to the client that the stdout output stream has ended */
-	if (response.m_result == KErrNone)
+	else if (result.m_subResult != 0)
 	{
-		char terminators[2] = { 0, 0 };
-		m_socket->write(terminators, sizeof(terminators));
-	}
-	else if ((response.m_result == -1) || (response.m_result == 127))
-	{
-		printf("execute: Unable to launch command\n");
-	}
-	else if (response.m_result != 0)
-	{
-		/* It's a bit crazy but launching behaves differently under Windows, so we have to take this */
-		/* into account */
-
-#ifdef WIN32
-
-		printf("execute: Command failed, return code = %d\n", response.m_result);
-
-#else /* WIN32 */
-
-		printf("execute: Command failed, return code = %d\n", WEXITSTATUS(response.m_result));
-
-#endif /* WIN32 */
-
+		printf("execute: Command \"%s\" was launched successfully but returned failure (Error = %d)\n", m_payload,
+			result.m_subResult);
 	}
 }
 
@@ -198,7 +181,7 @@ void CFileInfo::execute()
 
 	int result;
 	SFileInfo *fileInfo;
-	SResponse response;
+	TResponse response;
 	TEntry entry;
 
 	/* Determine if the file exists and send the result to the remote client */
@@ -244,7 +227,7 @@ void CGet::execute()
 	m_fileName = reinterpret_cast<char *>(m_payload);
 
 	int result;
-	SResponse response;
+	TResponse response;
 	TEntry entry;
 
 	/* Determine if the file exists and send the result to the remote client */
@@ -312,7 +295,7 @@ void CRename::execute()
 	printf("rename: Renaming file \"%s\" to \"%s\"\n", oldName, newName);
 
 	RFileUtils fileUtils;
-	SResponse response;
+	TResponse response;
 
 	/* Rename the file and return the result to the client */
 	response.m_result = fileUtils.renameFile(oldName, newName);
