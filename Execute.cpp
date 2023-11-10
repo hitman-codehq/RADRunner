@@ -13,6 +13,36 @@
 #endif /* __unix__ */
 
 /**
+ * Amiga OS client exit callback function.
+ * This function is called in the context of a child process that has been launched by the
+ * CreateNewProcTags() function when that child process is terminated.
+ *
+ * @date	Friday 10-Nov-2023 6:00 am, Code HQ Tokyo Tsukuda
+ * @param	a_returnCode	The return code of the child process
+ * @param	a_exitData		Pointer to an integer into which to write the client's exit code
+ */
+
+#ifdef __amigaos__
+
+#ifdef __amigaos4__
+
+void ExitFunction(int32_t a_returnCode, int32_t *a_exitData)
+{
+	*a_exitData = a_returnCode;
+}
+
+#else /* ! __amigaos4__ */
+
+void ExitFunction(int32_t a_returnCode __asm("d0"), int32_t *a_exitData __asm("d1"))
+{
+	*a_exitData = a_returnCode;
+}
+
+#endif /* ! __amigaos4__ */
+
+#endif /* __amigaos__ */
+
+/**
  * Launches a command and streams its output to the client.
  * This function launches a command with dedicated stdin, stdout and stderr handles that allow the
  * control and capture of all stdio of the child process that has been launched.  It will capture all
@@ -25,53 +55,66 @@
  * @return	KErrGeneral if any other error occurred
  */
 
-int CExecute::launchCommand(char *a_commandName)
+TResult CExecute::launchCommand(char *a_commandName)
 {
-	int retVal = KErrGeneral;
-	SResponse response;
+	TResult retVal{ KErrGeneral, 0 };
 
 #ifdef __amigaos__
 
+	int32_t exitCode = 0;
 	BPTR stdInRead = Open("Console:", MODE_OLDFILE);
 	BPTR stdOutWrite = Open("PIPE:RADRunner", MODE_NEWFILE);
 	BPTR stdOutRead = Open("PIPE:RADRunner", MODE_OLDFILE);
 
 	if ((stdInRead != 0) && (stdOutRead != 0) && (stdOutWrite != 0))
 	{
-		LONG result = SystemTags(a_commandName, SYS_Asynch, TRUE, SYS_Input, stdInRead,
-			SYS_Output, stdOutWrite, TAG_DONE);
+		/* Load the command executable into memory and use the returned segment list to create a new process */
+		/* with CreateNewProcTags().  We do it like this because this is the only way to capture the child's */
+		/* exit code.  Using SystemTags() results in the shell's exit code being returned, not the child's */
+		BPTR segList = LoadSeg(a_commandName);
 
-		if (result == 0)
+		if (segList != 0)
 		{
-			char *buffer = new char[STDOUT_BUFFER_SIZE];
-			LONG bytesRead;
+			struct Process *process = CreateNewProcTags(NP_Seglist, (ULONG) segList, NP_Input, stdInRead,
+				NP_Output, stdOutWrite, NP_ExitCode, (ULONG) ExitFunction, NP_ExitData, (ULONG) &exitCode,
+				NP_Cli, TRUE, TAG_DONE);
 
-			/* Write a successful completion code, to let the client know that it should listen for the */
-			/* command output to be streamed */
-			response.m_result = retVal = KErrNone;
-			SWAP(&response.m_result);
-			response.m_size = 0;
-			m_socket->write(&response, sizeof(response));
-
-			/* Loop around and read as much from the child's stdout as possible.  When the child exits, */
-			/* the pipe will be closed and Read() will fail */
-			do
+			if (process != NULL)
 			{
-				if ((bytesRead = Read(stdOutRead, buffer, (STDOUT_BUFFER_SIZE - 1))) > 0)
-				{
-					/* NULL terminate and print the child's output, and send it to the client for display */
-					/* there as well */
-					buffer[bytesRead] = '\0';
-					printf("%s", buffer);
-					m_socket->write(buffer, bytesRead);
-				}
-			}
-			while (bytesRead > 0);
+				char *buffer = new char[STDOUT_BUFFER_SIZE];
+				LONG bytesRead;
 
-			delete [] buffer;
+				retVal.m_result = KErrNone;
+
+				/* Loop around and read as much from the child's stdout as possible.  When the child exits, */
+				/* the pipe will be closed and Read() will fail */
+				do
+				{
+					if ((bytesRead = Read(stdOutRead, buffer, (STDOUT_BUFFER_SIZE - 1))) > 0)
+					{
+						/* NULL terminate and print the child's output, and send it to the client for display */
+						/* there as well */
+						buffer[bytesRead] = '\0';
+						printf("%s", buffer);
+						m_socket->write(buffer, bytesRead);
+					}
+				}
+				while (bytesRead > 0);
+
+				delete [] buffer;
+				stdInRead = stdOutWrite = 0;
+
+				retVal.m_subResult = exitCode;
+			}
+		}
+		else
+		{
+			retVal.m_result = Utils::MapLastError();
 		}
 	}
 
+	if (stdInRead != 0) { Close(stdInRead); }
+	if (stdOutWrite != 0) { Close(stdOutWrite); }
 	if (stdOutRead != 0) { Close(stdOutRead); }
 
 #elif defined(__unix__)
@@ -85,14 +128,10 @@ int CExecute::launchCommand(char *a_commandName)
 	if (pipe != nullptr)
 	{
 		char *buffer = new char[STDOUT_BUFFER_SIZE];
+		int exitCode;
 		size_t bytesRead;
 
-		/* Write a successful completion code, to let the client know that it should listen for the */
-		/* command output to be streamed */
-		response.m_result = retVal = KErrNone;
-		SWAP(&response.m_result);
-		response.m_size = 0;
-		m_socket->write(&response, sizeof(response));
+		retVal.m_result = KErrNone;
 
 		/* Loop around and read as much from the child's stdout as possible.  When the child exits, */
 		/* the pipe will be closed and fread() will fail */
@@ -110,7 +149,30 @@ int CExecute::launchCommand(char *a_commandName)
 		while (bytesRead > 0);
 
 		delete [] buffer;
-		pclose(pipe);
+
+		exitCode = pclose(pipe);
+
+		/* If the client has exited with a non-zero exit code, convert it to one of The Framework's error codes. */
+		/* The error codes 126 and 127 are not in any header files, but are well-known shell error codes on Unix */
+		if (WIFEXITED(exitCode))
+		{
+			exitCode = (WEXITSTATUS(exitCode));
+
+			/* Exit code 126 means that the file is not in an executable format */
+			if (exitCode == 126)
+			{
+				retVal.m_result = KErrCorrupt;
+			}
+			/* Exit code 127 means that the file was not found */
+			else if (exitCode == 127)
+			{
+				retVal.m_result = KErrNotFound;
+			}
+			else
+			{
+				retVal.m_subResult = exitCode;
+			}
+		}
 	}
 
 #else /* ! __unix__ */
@@ -132,20 +194,15 @@ int CExecute::launchCommand(char *a_commandName)
 			{
 				if (SetHandleInformation(m_stdInWrite, HANDLE_FLAG_INHERIT, 0))
 				{
+					HANDLE childProcess;
+
 					/* Create the child process.  This will read from and write to the pipes we have created, */
 					/* and upon exit will close its end of the pipes, so that we can detect that it has exited */
-					if ((retVal = createChildProcess(a_commandName)) == 0)
+					if ((retVal.m_result = createChildProcess(a_commandName, childProcess)) == KErrNone)
 					{
 						char *buffer = new char[STDOUT_BUFFER_SIZE];
 						BOOL success;
-						DWORD bytesRead;
-
-						/* Write a successful completion code, to let the client know that it should listen for the */
-						/* command output to be streamed */
-						response.m_result = retVal;
-						SWAP(&response.m_result);
-						response.m_size = 0;
-						m_socket->write(&response, sizeof(response));
+						DWORD bytesRead, exitCode;
 
 						/* Loop around and read as much from the child's stdout as possible.  When the child exits, */
 						/* the pipe will be closed and ReadFile() will fail */
@@ -165,6 +222,14 @@ int CExecute::launchCommand(char *a_commandName)
 						while (success && bytesRead > 0);
 
 						delete [] buffer;
+
+						if (GetExitCodeProcess(childProcess, &exitCode))
+						{
+							retVal.m_subResult = exitCode;
+						}
+
+						/* And finally, close the handle to the child process now that we have its return code */
+						CloseHandle(childProcess);
 					}
 				}
 
@@ -212,9 +277,9 @@ int CExecute::launchCommand(char *a_commandName)
 
 #ifdef WIN32
 
-int CExecute::createChildProcess(char *a_commandName)
+int CExecute::createChildProcess(char *a_commandName, HANDLE &a_childProcess)
 {
-	int retVal = KErrNotFound;
+	int retVal;
 	PROCESS_INFORMATION processInfo;
 	STARTUPINFO startupInfo;
 
@@ -232,9 +297,9 @@ int CExecute::createChildProcess(char *a_commandName)
 	if (CreateProcess(NULL, a_commandName, NULL, NULL, TRUE, 0, NULL, NULL, &startupInfo, &processInfo))
 	{
 		retVal = KErrNone;
+		a_childProcess = processInfo.hProcess;
 
-		/* Close handles to the child process and its primary thread, which we don't need */
-		CloseHandle(processInfo.hProcess);
+		/* Close the handle to the primary thread, which we don't need */
 		CloseHandle(processInfo.hThread);
 
 		/* Close handles to the stdin and stdout pipes no longer needed by the child process.  If they */
@@ -243,6 +308,10 @@ int CExecute::createChildProcess(char *a_commandName)
 		m_stdOutWrite = NULL;
 		CloseHandle(m_stdInRead);
 		m_stdInRead = NULL;
+	}
+	else
+	{
+		retVal = Utils::MapLastError();
 	}
 
 	return retVal;
