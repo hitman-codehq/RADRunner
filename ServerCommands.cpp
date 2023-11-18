@@ -81,7 +81,6 @@ void CDir::execute()
 			}
 
 			/* Allocate a buffer large enough to hold the response payload and fill it with the file information */
-			printf("payloadSize = %u\n", payloadSize);
 			payload = new char[payloadSize];
 
 			entry = entries->getHead();
@@ -89,8 +88,6 @@ void CDir::execute()
 			while (entry != nullptr)
 			{
 				nameLength = strlen(entry->iName);
-				printf("Adding %s of length %lld\n", entry->iName, entry->iSize);
-				printf("Adding %s of length %u %x\n", entry->iName, (uint32_t) entry->iSize, (uint32_t) entry->iSize);
 				memcpy(payload + offset, entry->iName, nameLength + 1);
 				offset += nameLength + 1;
 				WRITE_INT_64((payload + offset), entry->iSize);
