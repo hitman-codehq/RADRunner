@@ -51,12 +51,9 @@ void CDir::sendRequest()
 		while (payload < payloadEnd && *payload != '\0')
 		{
 			name = reinterpret_cast<char *>(payload);
-			printf("%s\n", name);
 			payload += strlen(name) + 1;
 			READ_INT_64(size, payload);
 			payload += sizeof(size);
-			printf("%s %lld\n", name, size);
-			printf("%s %u %x\n", name, (uint32_t) size, (uint32_t) size);
 
 			ASSERTM((payload < payloadEnd), "CDir::sendRequest() => Payload contents do not match its size");
 		}
