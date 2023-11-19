@@ -439,21 +439,21 @@ static void StartServer(unsigned short a_port)
 						/* Otherwise it is a "real" socket error, so display an error and shut down */
 						if (a_exception.m_result != 0)
 						{
-							printf("Unable to perform I/O on socket (Error = %d)!\n", a_exception.m_result);
+							printf("Unable to perform I/O on socket (Error = %d)\n", a_exception.m_result);
 							shutdown = true;
 						}
 					}
 				}
 				else
 				{
-					printf("failed (Error = %d)!\n", result);
+					printf("failed (Error = %d)\n", result);
 					shutdown = true;
 				}
 			} while (!g_break && !shutdown);
 		}
 		else
 		{
-			printf("Unable to listen on socket (Error = %d)!\n", result);
+			printf("Unable to listen on socket (Error = %d)\n", result);
 			shutdown = true;
 		}
 

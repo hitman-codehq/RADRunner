@@ -51,6 +51,7 @@ void CDir::sendRequest()
 		while (payload < payloadEnd && *payload != '\0')
 		{
 			name = reinterpret_cast<char *>(payload);
+			printf("%s\n", name);
 			payload += strlen(name) + 1;
 			READ_INT_64(size, payload);
 			payload += sizeof(size);
