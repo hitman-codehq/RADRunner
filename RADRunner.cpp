@@ -74,13 +74,15 @@ static void SignalHandler(int /*a_signal*/)
  * @date	Sunday 10-Jan-2021 8:11 am, Code HQ Bergmannstrasse
  * @param	a_socket		The socket to which to write client commands
  * @param	a_scriptName	Fully qualified path to the script to be parsed
+ * @return	A TResult containing both results from RADRunner and from any client command launched
  */
 
-static void ProcessScript(RSocket &a_socket, const char *a_scriptName)
+static TResult ProcessScript(RSocket &a_socket, const char *a_scriptName)
 {
 	int scriptArgLength;
 	RTextFile scriptFile;
 	TLex scriptArgTokens(a_scriptName, static_cast<int>(strlen(a_scriptName)));
+	TResult retVal{ KErrNone, 0 };
 
 	/* The first argument is the script name so extract that separately */
 	const char *scriptArgToken = scriptArgTokens.NextToken(&scriptArgLength);
@@ -207,8 +209,13 @@ static void ProcessScript(RSocket &a_socket, const char *a_scriptName)
 				if (handler != nullptr)
 				{
 					printf("Sending request \"%s\"\n", command.c_str());
-					handler->sendRequest();
+					retVal = handler->sendRequest();
 					delete handler;
+
+					if ((retVal.m_result != KErrNone) || (retVal.m_subResult != 0))
+					{
+						break;
+					}
 				}
 			}
 		}
@@ -219,6 +226,8 @@ static void ProcessScript(RSocket &a_socket, const char *a_scriptName)
 	{
 		Utils::Error("Unable to open script file \"%s\" for parsing", a_scriptName);
 	}
+
+	return retVal;
 }
 
 /**
@@ -257,7 +266,7 @@ static TResult StartClient(unsigned short a_port)
 
 				if (g_args[ARGS_SCRIPT] != nullptr)
 				{
-					ProcessScript(socket, g_args[ARGS_SCRIPT]);
+					retVal = ProcessScript(socket, g_args[ARGS_SCRIPT]);
 				}
 				else
 				{
