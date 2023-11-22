@@ -33,7 +33,7 @@ ifdef PREFIX
 		LFLAGS += -athread=native
 		OBJ := $(OBJ)_OS4
 	else
-		IFLAGS += -mcrt=clib2
+		CFLAGS += -mcrt=clib2
 		LFLAGS += -mcrt=clib2
 		LIBS += -lnet
 	endif
