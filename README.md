@@ -77,7 +77,7 @@ on port 80.
 In client mode, usage tends to follow the pattern:
 
 ```shell
-$ RADRunner \<server\> COMMAND
+$ RADRunner <server> COMMAND
 ```
 
 \<server\> is either the name of the server or its IP address.  COMMAND is one of the commands shown by the ? request.
@@ -88,8 +88,8 @@ $ RADRunner vampire SEND Debug/MyL33tCode
 send: Sending file "Debug/MyL33tCode"
 send: Transferring file "Debug/MyL33tCode"
 send: Transferred 39.828 Kilobytes in 0.3 seconds
-$ RADRunner vampire SEND Debug/MyL33tCode
-execute: Executing file "MyL33tCode"
+$ RADRunner vampire EXECUTE MyL33tCode
+execute: Executing command "MyL33tCode"
 ```
 
 On the server, the following would be ouput:
@@ -203,7 +203,7 @@ can be worked around by using `DIR """"`.  This applies to all commands that ref
 
 ### EXECUTE/K \<filename\>
 
-Executes a file on the remote server.  Both the EXECUTE keyword and the filename must be specified.  If the filename
+Executes a command on the remote server.  Both the EXECUTE keyword and the filename must be specified.  If the filename
 contains no path or a relative path then it is executed from the server's current directory.  If it contains a path
 then it will be executed from that path, and the path can be absolute or relative.  Executables and script files can
 be executed.
@@ -219,14 +219,38 @@ an example of using RADRunner to build itself remotely.
 
 ```shell
 $ RADRunner fastpc EXECUTE "make DEBUG=1"
-execute: Executing file "make DEBUG=1"
+execute: Executing command "make DEBUG=1"
 Compiling RADRunner.cpp...
 Linking Debug/RADRunner...
 execute: Command complete
 ```
 
-Note that currently, output will only be captured if the RADRunner server is running on a Windows PC.  If it is running
-on Amiga OS or UNIX then it will still be executed, but no output will be sent back to the client (yet).
+The execute command also captures the exit code of the command that was executed remotely and returns it from the
+RADRunner client.  In order to differentiate between RADRunner itself failing and the remote command failing, the
+result from the remote command is made negative.  So let's say that the remote command exits with the return code 42.
+Executing that command with RADRunner would result in the following output:
+
+```shell
+$ RADRunner fastpc EXECUTE MyL33tCode
+execute: Executing command "MyL33tCode"
+execute: Command complete
+execute: Remote command "MyL33tCode" was launched successfully but returned failure (error 42)
+$ echo $RC
+-42
+```
+
+RADRunner returned a negative number, meaning that "MyL33tCode" was launched but then it failed and returned 42.  If
+a *positive* number had been returned, RADRunner itself has failed.  Perhaps the remote server could not be contacted
+or the command to be executed could not be found.  At the time of writing, RADRunner does not return different errors
+to indicate what went wrong - it only returns the generic Amiga OS shell error RETURN_ERROR (10).
+
+On Unix and Unix-like systems, it is not possible for RADRunner to return a negative number due to the Posix standard.
+Returning -42 from RADRunner will result in the shell turning it into the 2's complement version, so the return code -42
+will become 214.  Confusing?  Yep, sure is!  Unfortunately, trying to write software that is portable between operating
+systems is sometimes more difficult than it seems.  The only suggestion is that if you have a requirement to run the
+RADRunner client on Unix and detect remote failures, make sure that you return some value that is easily detectable as
+a failure.  As mentioned above, RADRunner will always return RETURN_ERROR (10) on failure, so pretty much any number
+apart from 10 can be considered to be a return code from the launched command executable.
 
 ### GET/K \<filename\>
 
@@ -413,12 +437,12 @@ send: Sending file "Debug/RADRunner"
 send: Transferring file "Debug/RADRunner"
 send: Transferred 235.424 Kilobytes in 0.47 seconds
 Sending request "execute"
-execute: Executing file "RADRunner"
+execute: Executing command "RADRunner"
 Error: REMOTE argument must be specified
 execute: Command complete
 ```
 
-If you get the output "Executing file "RADRunner"" and "REMOTE argument must be specified" then the native version of
+If you get the output "Executing command "RADRunner" and "REMOTE argument must be specified" then the native version of
 RADRunner that was just built is being executed successfully.  It is not actually useful, as RADRunner can't be used to
 develop itself, but it shows how the end-to-end system works, so you can copy these configuration files to your own
 project's directory and use them there.
@@ -486,7 +510,7 @@ you can build on the Amiga as follows:
 9.Work:NewStuff> make
 Parsing script "BuildAndGet.rad"...
 Sending request "execute"
-execute: Executing file "make DEBUG=1"
+execute: Executing command "make DEBUG=1"
 Compiling ClientCommands.cpp...
 Compiling Execute.cpp...
 Compiling RADRunner.cpp...
