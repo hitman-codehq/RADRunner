@@ -302,7 +302,7 @@ static TResult StartClient(unsigned short a_port)
 					}
 				}
 			}
-			catch (RSocket::Error &a_exception)
+			catch (std::runtime_error &a_exception)
 			{
 				Utils::Error(a_exception.what());
 			}
