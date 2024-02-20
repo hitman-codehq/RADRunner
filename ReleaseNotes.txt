@@ -1,0 +1,12 @@
+
+Regarding the release status of RADRunner, it is currently in beta.  New releases
+that are built by GitHub may or may not contain improvements, as the builds are
+triggered automatically by code merges, so sometimes a build contains only internal
+non functional changes.
+
+If a build does contain a new feature or bugfix, I'll try to remember to add it to
+this file with the build's release date.
+
+Have fun with the Amiga!
+
+Colin Ward AKA Hitman/Code HQ
