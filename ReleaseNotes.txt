@@ -1,12 +1,23 @@
 
-Regarding the release status of RADRunner, it is currently in beta.  New releases
-that are built by GitHub may or may not contain improvements, as the builds are
-triggered automatically by code merges, so sometimes a build contains only internal
-non functional changes.
+This ReleaseNotes.txt was added by the author on request from a user.  Until now, the author wasn't aware that the
+application actually had any users!
 
-If a build does contain a new feature or bugfix, I'll try to remember to add it to
-this file with the build's release date.
+Please note that RADRunner is currently in beta. Until version 1.0, binary compatibility between releases is not
+guaranteed.  When a new build has a binary break, it will be mentioned here.  Once version 1.0 is released, it will
+contain a mechanism for detecting incompatible client and server versions.
+
+New releases that are built by GitHub may or may not contain improvements, as the builds are triggered automatically
+by code merges, so sometimes a build contains only internal non functional changes.
+
+If a build does contain a new feature or bugfix, I'll try to remember to add it to this file with the build's release
+date.
 
 Have fun with the Amiga!
 
 Colin Ward AKA Hitman/Code HQ
+
+Version 0.01 (2024.04.24):
+
+  - First public release
+
+  - Added ability to specify the server port as a part of the remote host name, for example localhost:8080
