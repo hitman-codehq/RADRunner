@@ -275,6 +275,15 @@ And to use that from a remote computer:
 d:\Source> RADRunner vampire PORT 68000 DIR RAM:
 ```
 
+Note that when connecting to a remote computer, the port can also be specified as a part of the server name or IP
+address.  For instance:
+
+```shell
+d:\Source> RADRunner vampire:68000 DIR RAM:
+```
+
+In this case, the port specified as a part of the server name overrides the port specified with the PORT command.
+
 ### SCRIPT/K \<filename\>
 
 Executes a number of commands inside the RADRunner script file specified by \<filename\>.  See the section "Script Support"

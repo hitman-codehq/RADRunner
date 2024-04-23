@@ -247,7 +247,33 @@ static TResult StartClient(unsigned short a_port)
 
 	if (g_args[ARGS_REMOTE] != nullptr)
 	{
-		if (socket.open(g_args[ARGS_REMOTE], a_port) == KErrNone)
+		int serverLength, portLength, port;
+		TLex lex(g_args[ARGS_REMOTE], static_cast<int>(strlen(g_args[ARGS_REMOTE])));
+
+		lex.SetWhitespace(":");
+
+		/* Extract the server name and port number from the remote name passed in and, if a port was specified, */
+		/* convert it and check its validity */
+		const char *serverString = lex.NextToken(&serverLength);
+		const char *portString = lex.NextToken(&portLength);
+
+		std::string server = std::string(serverString, serverLength);
+
+		/* The port string is optional so only parse if it is there, and use the default value if it is missing */
+		/* or invalid */
+		if (portString)
+		{
+			if (Utils::StringToInt(portString, &port) == KErrNone)
+			{
+				a_port = static_cast<unsigned short>(port);
+			}
+			else
+			{
+				Utils::Error("Specified port \"%s\" is invalid, using default port %d", portString, a_port);
+			}
+		}
+
+		if (socket.open(server.c_str(), a_port) == KErrNone)
 		{
 			try
 			{
@@ -311,7 +337,7 @@ static TResult StartClient(unsigned short a_port)
 		}
 		else
 		{
-			Utils::Error("Cannot connect to %s", g_args[ARGS_REMOTE]);
+			Utils::Error("Cannot connect to %s:%d", server.c_str(), a_port);
 		}
 	}
 	else
