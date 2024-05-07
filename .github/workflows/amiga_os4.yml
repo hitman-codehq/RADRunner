@@ -58,10 +58,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: latest_amiga_os4
-          name: 'Amiga OS4 Latest Build $$'
+          name: "Amiga OS4 Latest Build $$"
           prerelease: true
-          body: 'This is a build of the latest code pushed to GitHub. It has received basic local testing but is
-            not an official release and is not guaranteed to function correctly'
+          body: "This is a build of the latest code pushed to GitHub. It has received basic local testing but is
+            not an official release and is not guaranteed to function correctly"
           files: |
             RADRunner.debug
             RADRunner/Release_OS4/RADRunner

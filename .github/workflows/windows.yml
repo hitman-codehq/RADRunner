@@ -27,7 +27,7 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v1.1
         with:
-          vs-version: '16.0'
+          vs-version: "16.0"
       - name: Build
         run: |
           msbuild /p:Configuration=Release /p:Platform=x86
@@ -57,10 +57,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: latest_windows
-          name: 'Windows Latest Build $$'
+          name: "Windows Latest Build $$"
           prerelease: true
-          body: 'This is a build of the latest code pushed to GitHub. It has received basic local testing but is
-            not an official release and is not guaranteed to function correctly'
+          body: "This is a build of the latest code pushed to GitHub. It has received basic local testing but is
+            not an official release and is not guaranteed to function correctly"
           files: |
             RADRunner.debug.exe
             RADRunner.exe
