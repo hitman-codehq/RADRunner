@@ -76,16 +76,31 @@ TResult CDir::sendRequest()
 
 TResult CExecute::sendRequest()
 {
-	int32_t payloadSize = static_cast<int32_t>(strlen(m_fileName) + 1);
 	bool done = false;
 	int bytesRead;
 	std::string buffer;
 
 	printf("execute: Executing command \"%s\"\n", m_fileName);
+	printf("execute: Requesting execution of \"%s\" with stack size %d\n", m_fileName, m_stackSize);
 
+	/* Include the size of just the filename in the payload size */
+	int32_t payloadSize = static_cast<int32_t>(sizeof(SExecuteInfo) + strlen(m_fileName) + 1);
 	m_command.m_size = payloadSize;
+
 	sendCommand();
-	m_socket->write(m_fileName, payloadSize);
+
+	/* Allocate an SExecuteInfo structure of a size large enough to hold the file's name */
+	SExecuteInfo *executeInfo = reinterpret_cast<SExecuteInfo *>(new unsigned char [payloadSize]);
+
+	/* Initialise it with the file's name and timestamp */
+	executeInfo->m_stackSize = m_stackSize;
+	SWAP(&executeInfo->m_stackSize);
+	strcpy(executeInfo->m_fileName, m_fileName);
+
+	/* And finally send the payload and the file itself */
+	m_socket->write(executeInfo, payloadSize);
+
+	delete [] reinterpret_cast<unsigned char *>(executeInfo);
 
 	/* Loop around and read the remote command's stdout and stderr output and print it out.  This */
 	/* will be terminated by two NULL terminators in a row, so search each received line for these */
@@ -287,8 +302,8 @@ TResult CShutdown::sendRequest()
 }
 
 /**
- * Verfies the client's protocol version.
- * Requests the remote server's protocol version, and shuts the client down if it is not supported.
+ * Verifies the client's protocol version.
+ * Requests the remote server's protocol version, and throws an exception if it is not supported.
  *
  * @date	Saturday 06-Feb-2021 6:51 am, Code HQ Bergmannstrasse
  */
