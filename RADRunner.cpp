@@ -23,8 +23,9 @@
 #define ARGS_SEND 5
 #define ARGS_SERVER 6
 #define ARGS_SHUTDOWN 7
-#define ARGS_REMOTE 8
-#define ARGS_NUM_ARGS 9
+#define ARGS_STACKSIZE 8
+#define ARGS_REMOTE 9
+#define ARGS_NUM_ARGS 10
 
 #ifdef __amigaos4__
 
@@ -40,19 +41,19 @@ static const struct Resident g_ROMTag __attribute__((used)) =
 	NT_LIBRARY,
 	0,
 	"RADRunner",
-	"\0$VER: RADRunner 0.01 (17.04.2021)\r\n",
+	"\0$VER: RADRunner 0.02 (10.02.2025)\r\n",
 	NULL
 };
 
 #elif defined(__amigaos__)
 
-static const char g_accVersion[] = "$VER: RADRunner 0.01 (17.04.2021)";
+static const char g_accVersion[] = "$VER: RADRunner 0.02 (10.02.2025)";
 
 #endif /* __amigaos__ */
 
 /* Template for use in obtaining command line parameters.  Remember to change the indexes */
 /* in Commands.h if the ordering or number of these change */
-static const char g_template[] = "DIR/K,EXECUTE/K,GET/K,PORT/K,SCRIPT/K,SEND/K,SERVER/S,SHUTDOWN/S,REMOTE";
+static const char g_template[] = "DIR/K,EXECUTE/K,GET/K,PORT/K,SCRIPT/K,SEND/K,SERVER/S,SHUTDOWN/S,STACKSIZE/K,REMOTE";
 
 static volatile bool g_break;		/* Set to true if when ctrl-c is hit by the user */
 static RArgs g_args;				/* Contains the parsed command line arguments */
@@ -168,7 +169,7 @@ static TResult ProcessScript(RSocket &a_socket, const char *a_scriptName)
 				{
 					if (!argument.empty())
 					{
-						handler = new CExecute(&a_socket, argument.c_str());
+						handler = new CExecute(&a_socket, argument.c_str(), 0);
 					}
 					else
 					{
@@ -236,11 +237,15 @@ static TResult ProcessScript(RSocket &a_socket, const char *a_scriptName)
  * specified in the program arguments and then send the commands specified in the program arguments to it.  At
  * the end of this, it will close the connection to the server.
  *
+ * A stack size can be passed in, which will be sent to the target machine by the CExecute handler. This only
+ * affects Amiga OS.
+ *
  * @date	Tuesday 27-Apr-2021 6:33 am, Code HQ Bergmannstrasse
  * @param	a_port			The port to which to connect
+ * @param	a_stackSize		The stack size to be used on the target machine
  */
 
-static TResult StartClient(unsigned short a_port)
+static TResult StartClient(unsigned short a_port, int a_stackSize)
 {
 	RSocket socket;
 	TResult retVal{ KErrNone, 0 };
@@ -263,7 +268,7 @@ static TResult StartClient(unsigned short a_port)
 				/* need them to be zero initialised by MungWall */
 				std::shared_ptr<CHandler> handler(new CVersion(&socket));
 
-				/* Check whether the server's protocol version is supported.  This handler will */
+				/* Check whether the server's protocol version is supported.  The handler will */
 				/* display an error and exit if it is not */
 				handler->sendRequest();
 				handler = nullptr;
@@ -280,7 +285,7 @@ static TResult StartClient(unsigned short a_port)
 					}
 					else if (g_args[ARGS_EXECUTE] != nullptr)
 					{
-						handler = std::shared_ptr<CHandler>(new CExecute(&socket, g_args[ARGS_EXECUTE]));
+						handler = std::shared_ptr<CHandler>(new CExecute(&socket, g_args[ARGS_EXECUTE], a_stackSize));
 					}
 					else if (g_args[ARGS_GET] != nullptr)
 					{
@@ -500,7 +505,7 @@ static void StartServer(unsigned short a_port)
 
 int main(int a_argc, const char *a_argv[])
 {
-	int port = 80, result;
+	int port = 80, stackSize = 0, result;
 	TResult clientResult{KErrNone, 0};
 
 	/* Install a ctrl-c handler so we can handle ctrl-c being pressed and shut down the scan */
@@ -520,13 +525,29 @@ int main(int a_argc, const char *a_argv[])
 			}
 		}
 
+		if (g_args[ARGS_STACKSIZE] != nullptr)
+		{
+			if (Utils::StringToInt(g_args[ARGS_STACKSIZE], &stackSize) == KErrNone)
+			{
+				if (stackSize < 4096)
+				{
+					stackSize = 0;
+				}
+			}
+
+			if (stackSize == 0)
+			{
+				Utils::Error("Invalid stack size specified, using default stack size of %d on target machine", DEFAULT_STACK_SIZE);
+			}
+		}
+
 		if (g_args[ARGS_SERVER] != nullptr)
 		{
 			StartServer(static_cast<unsigned short>(port));
 		}
 		else
 		{
-			clientResult = StartClient(static_cast<unsigned short>(port));
+			clientResult = StartClient(static_cast<unsigned short>(port), stackSize);
 		}
 
 		g_args.close();

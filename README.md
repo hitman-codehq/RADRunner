@@ -57,7 +57,7 @@ like this:
 
 ```shell
 $ RADRunner ?
-DIR/K,EXECUTE/K,GET/K,PORT/K,SCRIPT/K,SEND/K,SERVER/S,SHUTDOWN/S,REMOTE
+DIR/K,EXECUTE/K,GET/K,PORT/K,SCRIPT/K,SEND/K,SERVER/S,SHUTDOWN/S,STACKSIZE/K,REMOTE
 ```
 
 Arguments are not case sensitive but by convention on Amiga OS they are typed in upper case, at least in examples.  But
@@ -260,7 +260,7 @@ on the original file.  Protection bits such as the script bit (on Amiga OS) are 
 
 ### PORT/K \<port\>
 
-This command is meant to be used in conjunction with other commands, to direct RADRunner to use a different port to the
+This argument is meant to be used in conjunction with other commands, to direct RADRunner to use a different port to the
 default, which is port 80.  This is useful when that port is being used for something else or is blocked.
 
 For example, to start a server on port 68000 (every Amiga user's favourite number):
@@ -319,6 +319,13 @@ Starts RADRunner in server mode, causing it to listen to incoming connections fr
 ### SHUTDOWN
 
 Shuts down the remote instance of RADRunner, when it's 3 am and time to go to bed.
+
+### STACKSIZE
+
+This argument applies only to Amiga OS, where the stack size has to be manually managed by the user.  By default, a
+stack size of 20k (20,480 bytes) is used when launching programs on Amiga OS using the "execute" command.  Larger stack
+sizes can be specified with this argument.  Values smaller than 4096 are rejected and values larger than INT_MAX
+(2,147,483,647) will be rounded to INT_MAX.
 
 ## More advanced uses
 
