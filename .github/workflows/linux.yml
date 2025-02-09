@@ -31,7 +31,7 @@ jobs:
         run: |
           make DEBUG=1
       - name: Archive Executables
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Linux-Executables
           path: |

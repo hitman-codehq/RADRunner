@@ -41,7 +41,7 @@ jobs:
           command: make DEBUG=1
           directory: RADRunner
       - name: Archive Executables
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Amiga-Executables-OS3
           path: |
