@@ -16,6 +16,15 @@ Have fun with the Amiga!
 
 Colin Ward AKA Hitman/Code HQ
 
+Version 0.02 (2025.02.07):
+
+  - Bug fix: The Amiga OS version of the "execute" command was launching executables with the default system stack size
+    of 4096 bytes, causing instability.  A default stack size of 20k is now used, and a custom stack size can be
+    specified by the client.  See the documentation for further details.
+
+  - Bumped protocol version to v0.2, as this is a breaking change.  All clients must be updated, as this version is not
+    compabible with protocol v0.1.
+
 Version 0.01 (2024.04.24):
 
   - First public release

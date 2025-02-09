@@ -50,18 +50,20 @@ void ExitFunction(int32_t a_returnCode __asm("d0"), int32_t *a_exitData __asm("d
  *
  * @date	Monday 15-Feb-2021 7:19 am, Code HQ Bergmannstrasse
  * @param	a_commandName	The name of the command to be launched
+ * @param	a_stackSize		The stack size to be used on the target machine
  * @return	KErrNone if the command was launched successfully
  * @return	KErrNotFound if the command executable could not be found
  * @return	KErrGeneral if any other error occurred
  */
 
-TResult CExecute::launchCommand(char *a_commandName)
+TResult CExecute::launchCommand(char *a_commandName, int a_stackSize)
 {
 	TResult retVal{ KErrGeneral, 0 };
 
 #ifdef __amigaos__
 
 	int32_t exitCode = 0;
+	ULONG stackSize = a_stackSize > 0 ? a_stackSize : DEFAULT_STACK_SIZE;
 	BPTR stdInRead = Open("Console:", MODE_OLDFILE);
 	BPTR stdOutWrite = Open("PIPE:RADRunner", MODE_NEWFILE);
 	BPTR stdOutRead = Open("PIPE:RADRunner", MODE_OLDFILE);
@@ -77,7 +79,7 @@ TResult CExecute::launchCommand(char *a_commandName)
 		{
 			struct Process *process = CreateNewProcTags(NP_Seglist, (ULONG) segList, NP_Input, stdInRead,
 				NP_Output, stdOutWrite, NP_ExitCode, (ULONG) ExitFunction, NP_ExitData, (ULONG) &exitCode,
-				NP_Cli, TRUE, TAG_DONE);
+				NP_Cli, TRUE, NP_StackSize, stackSize, TAG_DONE);
 
 			if (process != NULL)
 			{
@@ -106,6 +108,10 @@ TResult CExecute::launchCommand(char *a_commandName)
 
 				retVal.m_subResult = exitCode;
 			}
+			else
+			{
+				UnLoadSeg(segList);
+			}
 		}
 		else
 		{
@@ -118,6 +124,8 @@ TResult CExecute::launchCommand(char *a_commandName)
 	if (stdOutRead != 0) { Close(stdOutRead); }
 
 #elif defined(__unix__)
+
+	(void) a_stackSize;
 
 	// On UNIX systems, there is no way to programmatically capture stderr, but we can redirect it
 	// to stdout as a part of command invocation
@@ -176,6 +184,8 @@ TResult CExecute::launchCommand(char *a_commandName)
 	}
 
 #else /* ! __unix__ */
+
+	(void) a_stackSize;
 
 	SECURITY_ATTRIBUTES securityAttributes;
 

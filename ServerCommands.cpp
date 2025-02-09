@@ -51,7 +51,7 @@ void CDir::execute()
 {
 	readPayload();
 
-	/* Extract the filename from the payload */
+	/* Extract the directory name from the payload */
 	m_directoryName = reinterpret_cast<char *>(m_payload);
 
 	printf("dir: Listing contents of directory \"%s\"\n", m_directoryName);
@@ -136,9 +136,13 @@ void CExecute::execute()
 {
 	readPayload();
 
-	printf("execute: Executing command \"%s\"\n", m_payload);
+	/* Extract information about the file to be executed from the payload */
+	SExecuteInfo *executeInfo = reinterpret_cast<SExecuteInfo *>(m_payload);
+	SWAP(&executeInfo->m_stackSize);
 
-	TResult result = launchCommand(reinterpret_cast<char*>(m_payload));
+	printf("execute: Executing command \"%s\"\n", executeInfo->m_fileName);
+
+	TResult result = launchCommand(executeInfo->m_fileName, executeInfo->m_stackSize);
 
 	TResponse response{ result.m_result, result.m_subResult };
 	SWAP(&response.m_result);
