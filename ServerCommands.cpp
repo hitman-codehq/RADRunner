@@ -161,7 +161,7 @@ void CExecute::execute()
 	}
 	else if (result.m_subResult != 0)
 	{
-		printf("execute: Command \"%s\" was launched successfully but returned failure (Error = %d)\n", m_payload,
+		printf("execute: Command \"%s\" was launched successfully but returned failure (Error = %d)\n", executeInfo->m_fileName,
 			result.m_subResult);
 	}
 }
