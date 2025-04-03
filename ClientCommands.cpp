@@ -81,7 +81,6 @@ TResult CExecute::sendRequest()
 	std::string buffer;
 
 	printf("execute: Executing command \"%s\"\n", m_fileName);
-	printf("execute: Requesting execution of \"%s\" with stack size %d\n", m_fileName, m_stackSize);
 
 	/* Include the size of just the filename in the payload size */
 	int32_t payloadSize = static_cast<int32_t>(sizeof(SExecuteInfo) + strlen(m_fileName) + 1);
