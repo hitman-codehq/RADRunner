@@ -35,7 +35,16 @@ void ExitFunction(int32_t a_returnCode, int32_t *a_exitData)
 
 void ExitFunction(int32_t a_returnCode __asm("d0"), int32_t *a_exitData __asm("d1"))
 {
-	*a_exitData = a_returnCode;
+	CommandLineInterface *cli = Cli();
+
+	if (cli != nullptr)
+	{
+		*a_exitData = cli->cli_ReturnCode;
+	}
+	else
+	{
+		*a_exitData = a_returnCode;
+	}
 }
 
 #endif /* ! __amigaos4__ */
@@ -70,52 +79,39 @@ TResult CExecute::launchCommand(char *a_commandName, int a_stackSize)
 
 	if ((stdInRead != 0) && (stdOutRead != 0) && (stdOutWrite != 0))
 	{
-		/* Load the command executable into memory and use the returned segment list to create a new process */
-		/* with CreateNewProcTags().  We do it like this because this is the only way to capture the child's */
-		/* exit code.  Using SystemTags() results in the shell's exit code being returned, not the child's */
-		BPTR segList = LoadSeg(a_commandName);
+		int result = SystemTags(a_commandName, SYS_Input, stdInRead, SYS_Output, stdOutWrite,
+			NP_ExitCode, (ULONG) ExitFunction, NP_ExitData, (ULONG) &exitCode, SYS_Asynch, TRUE, NP_StackSize, stackSize,
+			TAG_DONE);
 
-		if (segList != 0)
+		if (result == 0)
 		{
-			struct Process *process = CreateNewProcTags(NP_Seglist, (ULONG) segList, NP_Input, stdInRead,
-				NP_Output, stdOutWrite, NP_ExitCode, (ULONG) ExitFunction, NP_ExitData, (ULONG) &exitCode,
-				NP_Cli, TRUE, NP_StackSize, stackSize, TAG_DONE);
+			char *buffer = new char[STDOUT_BUFFER_SIZE];
+			LONG bytesRead;
 
-			if (process != NULL)
+			retVal.m_result = KErrNone;
+
+			/* Loop around and read as much from the child's stdout as possible.  When the child exits, */
+			/* the pipe will be closed and Read() will fail */
+			do
 			{
-				char *buffer = new char[STDOUT_BUFFER_SIZE];
-				LONG bytesRead;
-
-				retVal.m_result = KErrNone;
-
-				/* Loop around and read as much from the child's stdout as possible.  When the child exits, */
-				/* the pipe will be closed and Read() will fail */
-				do
+				if ((bytesRead = Read(stdOutRead, buffer, (STDOUT_BUFFER_SIZE - 1))) > 0)
 				{
-					if ((bytesRead = Read(stdOutRead, buffer, (STDOUT_BUFFER_SIZE - 1))) > 0)
-					{
-						/* NULL terminate and print the child's output, and send it to the client for display */
-						/* there as well */
-						buffer[bytesRead] = '\0';
-						printf("%s", buffer);
-						m_socket->write(buffer, bytesRead);
-					}
+					/* NULL terminate and print the child's output, and send it to the client for display */
+					/* there as well */
+					buffer[bytesRead] = '\0';
+					printf("%s", buffer);
+					m_socket->write(buffer, bytesRead);
 				}
-				while (bytesRead > 0);
-
-				delete [] buffer;
-				stdInRead = stdOutWrite = 0;
-
-				retVal.m_subResult = exitCode;
 			}
-			else
-			{
-				UnLoadSeg(segList);
-			}
-		}
-		else
-		{
-			retVal.m_result = Utils::MapLastError();
+			while (bytesRead > 0);
+
+			retVal.m_subResult = exitCode;
+
+			/* Clean up resources used for the client process. The stdInRead and stdOutRead handles are closed by the */
+			/* asynchronous call to SystemTags() when the child process exits, but we need to close the stdOutWrite */
+			/* handle ourselves */
+			delete [] buffer;
+			stdInRead = stdOutWrite = 0;
 		}
 	}
 

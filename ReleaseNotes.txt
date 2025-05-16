@@ -16,7 +16,12 @@ Have fun with the Amiga!
 
 Colin Ward AKA Hitman/Code HQ
 
-Version 0.02 (2025.02.07):
+Version 0.03 (2025.05.17):
+
+  - Bug Fix: The Amiga OS version of the "execute" command was crashing on OS4. Many thanks to Colin Wenzel of the OS4
+    development team for his help in resolving this issue!
+
+Version 0.02 (2025.02.10):
 
   - Bug fix: The Amiga OS version of the "execute" command was launching executables with the default system stack size
     of 4096 bytes, causing instability.  A default stack size of 20k is now used, and a custom stack size can be

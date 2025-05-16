@@ -41,13 +41,13 @@ static const struct Resident g_ROMTag __attribute__((used)) =
 	NT_LIBRARY,
 	0,
 	"RADRunner",
-	"\0$VER: RADRunner 0.02 (10.02.2025)\r\n",
+	"\0$VER: RADRunner 0.03 (17.05.2025)\r\n",
 	NULL
 };
 
 #elif defined(__amigaos__)
 
-static const char g_accVersion[] = "$VER: RADRunner 0.02 (10.02.2025)";
+static const char g_accVersion[] = "$VER: RADRunner 0.03 (17.05.2025)";
 
 #endif /* __amigaos__ */
 
