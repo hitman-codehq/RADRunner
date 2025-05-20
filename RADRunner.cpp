@@ -503,7 +503,7 @@ static void StartServer(unsigned short a_port)
  * @return	RETURN_OK if successful, else RETURN_ERROR
  */
 
-int main(int a_argc, const char *a_argv[])
+int main(int a_argc, char *a_argv[])
 {
 	int port = 80, stackSize = 0, result;
 	TResult clientResult{KErrNone, 0};
@@ -515,7 +515,7 @@ int main(int a_argc, const char *a_argv[])
 
 	/* Parse the command line parameters passed in and make sure they are formatted correctly */
 
-	if ((result = g_args.open(g_template, ARGS_NUM_ARGS, a_argv, a_argc)) == KErrNone)
+	if ((result = g_args.open(g_template, ARGS_NUM_ARGS, a_argc, a_argv)) == KErrNone)
 	{
 		if (g_args[ARGS_PORT] != nullptr)
 		{
