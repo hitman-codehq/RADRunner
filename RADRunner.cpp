@@ -3,11 +3,10 @@
 #include <Args.h>
 #include <Lex.h>
 #include <StdTextFile.h>
+#include <Yggdrasil/Commands.h>
 #include <memory>
-#include <signal.h>
 #include <string.h>
 #include <vector>
-#include <Yggdrasil/Commands.h>
 
 #ifndef WIN32
 
@@ -55,17 +54,7 @@ static const char g_accVersion[] = "$VER: RADRunner 0.03 (17.05.2025)";
 /* in Commands.h if the ordering or number of these change */
 static const char g_template[] = "DIR/K,EXECUTE/K,GET/K,PORT/K,SCRIPT/K,SEND/K,SERVER/S,SHUTDOWN/S,STACKSIZE/K,REMOTE";
 
-static volatile bool g_break;		/* Set to true if when ctrl-c is hit by the user */
 static RArgs g_args;				/* Contains the parsed command line arguments */
-
-/* Written: Friday 02-Jan-2009 10:30 am */
-
-static void SignalHandler(int /*a_signal*/)
-{
-	/* Signal that ctrl-c has been pressed so that we break out of the scanning routine */
-
-	g_break = true;
-}
 
 /**
  * Processes the given script file and executes its contents.
@@ -470,7 +459,8 @@ static void StartServer(unsigned short a_port)
 					printf("failed (Error = %d)\n", result);
 					shutdown = true;
 				}
-			} while (!g_break && !shutdown);
+			}
+			while (!g_break && !shutdown);
 		}
 		else
 		{
@@ -488,7 +478,7 @@ static void StartServer(unsigned short a_port)
 
 	if (g_break)
 	{
-		printf("Received ctrl-c, exiting\n");
+		printf("Received ctrl+c, exiting\n");
 	}
 }
 
@@ -508,10 +498,10 @@ int main(int a_argc, char *a_argv[])
 	int port = 80, stackSize = 0, result;
 	TResult clientResult{KErrNone, 0};
 
-	/* Install a ctrl-c handler so we can handle ctrl-c being pressed and shut down the scan */
+	/* Install a ctrl+c handler so we can handle ctrl+c being pressed and shut down the scan */
 	/* properly */
 
-	signal(SIGINT, SignalHandler);
+	Utils::setSignal();
 
 	/* Parse the command line parameters passed in and make sure they are formatted correctly */
 
