@@ -64,7 +64,7 @@ void CDir::execute()
 	/* Scan the specified directory and build a list of files that it contains */
 	if ((result = dir.open(m_directoryName)) == KErrNone)
 	{
-		if ((result = dir.read(entries, EDirSortNameAscending)) == KErrNone)
+		if ((result = dir.read(EDirSortNameAscending)) == KErrNone)
 		{
 			char *payload;
 			size_t nameLength, offset = 0;
@@ -72,6 +72,7 @@ void CDir::execute()
 
 			/* Iterate through the list of files and determine the amount of memory required to store the filenames */
 			/* and file metadata */
+			entries = dir.getEntries();
 			const TEntry *entry = entries->getHead();
 
 			while (entry != nullptr)
