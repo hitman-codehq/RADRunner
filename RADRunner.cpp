@@ -456,7 +456,11 @@ static void StartServer(unsigned short a_port)
 				}
 				else
 				{
-					printf("failed (Error = %d)\n", result);
+					if (result != KErrBreak)
+					{
+						printf("failed (Error = %d)\n", result);
+					}
+
 					shutdown = true;
 				}
 			}
