@@ -7,7 +7,9 @@ guaranteed.  When a new build has a binary break, it will be mentioned here.  On
 contain a mechanism for detecting incompatible client and server versions.
 
 New releases that are built by GitHub may or may not contain improvements, as the builds are triggered automatically
-by code merges, so sometimes a build contains only internal non functional changes.
+by code merges, so sometimes a build contains only internal non functional changes. If there is a change of interest
+to users, it will be mentioned in this file. Releases with a date of XX.XX are release candidates; more work will be
+done to them before they become official releases with a new version number.
 
 If a build does contain a new feature or bugfix, I'll try to remember to add it to this file with the build's release
 date.
@@ -15,6 +17,13 @@ date.
 Have fun with the Amiga!
 
 Colin Ward AKA Hitman/Code HQ
+
+Version 0.04 (2025.XX.XX):
+
+  - Handle ctrl+c being pressed while trying to connect. Thanks to George Sokianos AKA @walkero-gr for the report!
+    https://github.com/hitman-codehq/RADRunner/issues/35
+
+  - Add a 5 second timeout, for all platforms, when the client is trying to connect. Thanks also to George Sokianos
 
 Version 0.03 (2025.05.17):
 
