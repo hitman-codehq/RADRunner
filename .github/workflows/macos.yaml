@@ -1,0 +1,59 @@
+name: MacOS
+
+on:
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Checkout StdFuncs
+        uses: actions/checkout@v3
+        with:
+          repository: hitman-codehq/StdFuncs
+          path: StdFuncs
+      - name: Download Libraries
+        run: |
+          mv StdFuncs ..
+          gh run download --repo hitman-codehq/StdFuncs --name MacOS-Libraries --dir ../StdFuncs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build
+        run: |
+          make
+      - name: Build Debug
+        run: |
+          make DEBUG=1
+      - name: Archive Executables
+        uses: actions/upload-artifact@v4
+        with:
+          name: MacOS-Executables
+          path: |
+            Debug/RADRunner
+            Release/RADRunner
+      - name: Prepare Release Files
+        run: |
+          echo -e "ref: $GITHUB_REF \ncommit: $GITHUB_SHA\nbuild: $(date +"%Y-%m-%dT%H:%M:%SZ")" > ReleaseInfo.txt
+          echo -e "platform:" $(uname -a) >> ReleaseInfo.txt
+          cp -a Debug/RADRunner ./RADRunner.debug
+          cp -a Release/RADRunner .
+      - name: Update Latest Build
+        uses: andelf/nightly-release@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: latest_macos
+          name: "macOS Latest Build $$"
+          prerelease: true
+          body: "This is a build of the latest code pushed to GitHub. It has received basic local testing but is
+            not an official release and is not guaranteed to function correctly"
+          files: |
+            RADRunner.debug
+            RADRunner
+            ReleaseInfo.txt
